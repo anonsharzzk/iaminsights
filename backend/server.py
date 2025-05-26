@@ -290,6 +290,163 @@ api_router = APIRouter(prefix="/api")
 
 
 
+# Provider sample data
+PROVIDER_SAMPLES = {
+    "aws": {
+        "provider": "aws",
+        "description": "AWS IAM access data format with services like S3, EC2, IAM, RDS, Lambda",
+        "required_fields": ["provider", "service", "resource_type", "resource_name", "access_type"],
+        "sample_format": {
+            "metadata": {
+                "import_date": "2024-12-19T10:30:00Z",
+                "source": "aws_iam_audit",
+                "description": "AWS IAM access audit data"
+            },
+            "users": [
+                {
+                    "user_email": "user@company.com",
+                    "user_name": "John Doe",
+                    "department": "Engineering",
+                    "job_title": "DevOps Engineer",
+                    "resources": [
+                        {
+                            "provider": "aws",
+                            "service": "S3",
+                            "resource_type": "bucket",
+                            "resource_name": "production-data-bucket",
+                            "resource_arn": "arn:aws:s3:::production-data-bucket",
+                            "access_type": "read",
+                            "region": "us-east-1",
+                            "account_id": "123456789012",
+                            "risk_level": "medium",
+                            "is_privileged": False,
+                            "mfa_required": True,
+                            "description": "Read access to production data"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "gcp": {
+        "provider": "gcp",
+        "description": "Google Cloud Platform IAM access data with services like Compute Engine, Cloud Storage, BigQuery",
+        "required_fields": ["provider", "service", "resource_type", "resource_name", "access_type"],
+        "sample_format": {
+            "metadata": {
+                "import_date": "2024-12-19T10:30:00Z",
+                "source": "gcp_iam_audit",
+                "description": "GCP IAM access audit data"
+            },
+            "users": [
+                {
+                    "user_email": "user@company.com",
+                    "user_name": "Jane Smith",
+                    "department": "Data Analytics",
+                    "job_title": "Data Engineer",
+                    "resources": [
+                        {
+                            "provider": "gcp",
+                            "service": "Compute Engine",
+                            "resource_type": "instance",
+                            "resource_name": "analytics-vm-001",
+                            "access_type": "write",
+                            "region": "us-central1",
+                            "account_id": "company-analytics-proj",
+                            "risk_level": "medium",
+                            "is_privileged": False,
+                            "mfa_required": True,
+                            "description": "Manage analytics compute instances"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "azure": {
+        "provider": "azure",
+        "description": "Microsoft Azure access data with services like Storage, Virtual Machines, Key Vault",
+        "required_fields": ["provider", "service", "resource_type", "resource_name", "access_type"],
+        "sample_format": {
+            "metadata": {
+                "import_date": "2024-12-19T10:30:00Z",
+                "source": "azure_rbac_audit",
+                "description": "Azure RBAC access audit data"
+            },
+            "users": [
+                {
+                    "user_email": "user@company.com",
+                    "user_name": "Mike Johnson",
+                    "department": "Infrastructure",
+                    "job_title": "Cloud Architect",
+                    "resources": [
+                        {
+                            "provider": "azure",
+                            "service": "Storage",
+                            "resource_type": "storage",
+                            "resource_name": "companydata001",
+                            "access_type": "admin",
+                            "region": "East US",
+                            "account_id": "subscription-12345678",
+                            "risk_level": "high",
+                            "is_privileged": True,
+                            "mfa_required": True,
+                            "description": "Full access to company storage account"
+                        }
+                    ]
+                }
+            ]
+        }
+    },
+    "okta": {
+        "provider": "okta",
+        "description": "Okta application access data with SSO applications and user permissions",
+        "required_fields": ["provider", "service", "resource_type", "resource_name", "access_type"],
+        "sample_format": {
+            "metadata": {
+                "import_date": "2024-12-19T10:30:00Z",
+                "source": "okta_audit",
+                "description": "Okta application access audit data"
+            },
+            "users": [
+                {
+                    "user_email": "user@company.com",
+                    "user_name": "Sarah Wilson",
+                    "department": "Sales",
+                    "job_title": "Sales Manager",
+                    "resources": [
+                        {
+                            "provider": "okta",
+                            "service": "Salesforce",
+                            "resource_type": "application",
+                            "resource_name": "Sales CRM",
+                            "access_type": "admin",
+                            "risk_level": "medium",
+                            "is_privileged": True,
+                            "mfa_required": True,
+                            "description": "Admin access to Salesforce CRM"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
+
+# Initialize default admin user
+async def init_default_admin():
+    """Initialize default admin user if no users exist"""
+    user_count = await db.users.count_documents({})
+    if user_count == 0:
+        default_admin = User(
+            email="adminn@iamsharan.com",
+            hashed_password=hash_password("Testing@123"),
+            role=UserRole.ADMIN,
+            created_at=datetime.utcnow()
+        )
+        await db.users.insert_one(default_admin.dict())
+        logging.info("Default admin user created: adminn@iamsharan.com")
+
 # Risk Analysis Functions
 def calculate_risk_score(user_access: UserAccess) -> float:
     """Calculate overall risk score for a user based on their access patterns"""
