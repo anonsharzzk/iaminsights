@@ -1137,7 +1137,10 @@ async def get_provider_statistics(current_user: User = Depends(get_current_user)
 # Enhanced API Endpoints
 
 @api_router.post("/import/json")
-async def import_json_data(file: UploadFile = File(...)):
+async def import_json_data(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
     """Import user access data from JSON file"""
     try:
         if not file.filename.endswith('.json'):
