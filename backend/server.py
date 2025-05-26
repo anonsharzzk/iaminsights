@@ -288,9 +288,7 @@ app = FastAPI(title="Cloud Access Visualization API", version="3.0.0")
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Update app version to 2.0.0
-app.title = "Cloud Access Visualization API"
-app.version = "2.0.0"
+
 
 # Risk Analysis Functions
 def calculate_risk_score(user_access: UserAccess) -> float:
