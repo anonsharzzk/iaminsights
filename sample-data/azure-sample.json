@@ -1,0 +1,142 @@
+{
+  "metadata": {
+    "import_date": "2024-12-19T10:30:00Z",
+    "source": "azure_rbac_audit",
+    "description": "Microsoft Azure RBAC access audit data - Sample for Cloud Access Visualizer",
+    "version": "1.0"
+  },
+  "users": [
+    {
+      "user_email": "david.williams@company.com",
+      "user_name": "David Williams",
+      "user_id": "dwilliams@company.com",
+      "department": "Infrastructure",
+      "job_title": "Cloud Infrastructure Engineer",
+      "manager": "infrastructure-lead@company.com",
+      "is_service_account": false,
+      "groups": ["infrastructure-team", "azure-admins", "cloud-engineers"],
+      "roles": ["Contributor", "Storage Account Contributor", "Virtual Machine Contributor"],
+      "resources": [
+        {
+          "provider": "azure",
+          "service": "Storage",
+          "resource_type": "storage_account",
+          "resource_name": "companydata001",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "Storage Account Contributor",
+            "scope": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/storage/providers/Microsoft.Storage/storageAccounts/companydata001"
+          },
+          "description": "Main company data storage account",
+          "region": "East US",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T09:20:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "azure",
+          "service": "Virtual Machines",
+          "resource_type": "virtual_machine",
+          "resource_name": "web-servers",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "Virtual Machine Contributor",
+            "scope": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/compute/providers/Microsoft.Compute/virtualMachines/*"
+          },
+          "description": "Web server virtual machines management",
+          "region": "East US",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-18T15:30:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "azure",
+          "service": "Key Vault",
+          "resource_type": "vault",
+          "resource_name": "company-secrets",
+          "access_type": "read",
+          "permission_details": {
+            "role": "Key Vault Secrets User",
+            "scope": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/security/providers/Microsoft.KeyVault/vaults/company-secrets"
+          },
+          "description": "Access to application secrets",
+          "region": "East US",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "medium",
+          "is_privileged": false,
+          "last_used": "2024-12-19T11:45:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "lisa.anderson@company.com",
+      "user_name": "Lisa Anderson",
+      "user_id": "landerson@company.com",
+      "department": "Security",
+      "job_title": "Azure Security Specialist",
+      "manager": "security-director@company.com",
+      "is_service_account": false,
+      "groups": ["security-team", "azure-security", "compliance"],
+      "roles": ["Security Reader", "Security Admin", "Compliance Administrator"],
+      "resources": [
+        {
+          "provider": "azure",
+          "service": "Security Center",
+          "resource_type": "workspace",
+          "resource_name": "security-monitoring",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "Security Admin",
+            "scope": "/subscriptions/12345678-1234-1234-1234-123456789012"
+          },
+          "description": "Azure Security Center administration",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T08:15:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "azure",
+          "service": "Sentinel",
+          "resource_type": "workspace",
+          "resource_name": "siem-workspace",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "Azure Sentinel Contributor",
+            "scope": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/security/providers/Microsoft.OperationalInsights/workspaces/siem-workspace"
+          },
+          "description": "SIEM and threat hunting platform",
+          "region": "East US",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T07:30:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "azure",
+          "service": "Active Directory",
+          "resource_type": "directory",
+          "resource_name": "company-tenant",
+          "access_type": "read",
+          "permission_details": {
+            "role": "Directory Readers",
+            "scope": "/tenants/company.onmicrosoft.com"
+          },
+          "description": "Read access to company Azure AD",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "medium",
+          "is_privileged": false,
+          "last_used": "2024-12-19T10:00:00Z",
+          "mfa_required": true
+        }
+      ]
+    }
+  ]
+}

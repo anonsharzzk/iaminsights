@@ -1,0 +1,193 @@
+{
+  "metadata": {
+    "import_date": "2024-12-19T10:30:00Z",
+    "source": "okta_access_audit",
+    "description": "Okta identity and access management audit data - Sample for Cloud Access Visualizer",
+    "version": "1.0"
+  },
+  "users": [
+    {
+      "user_email": "admin.super@company.com",
+      "user_name": "Super Administrator",
+      "user_id": "admin.super@company.com",
+      "department": "IT Administration",
+      "job_title": "IT Director",
+      "manager": "cto@company.com",
+      "is_service_account": false,
+      "groups": ["it-admins", "super-admins", "okta-admins"],
+      "roles": ["Super Admin", "Organization Admin"],
+      "resources": [
+        {
+          "provider": "okta",
+          "service": "Okta Admin",
+          "resource_type": "application",
+          "resource_name": "Okta Administration Console",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "super-admin",
+            "scopes": ["okta.users.manage", "okta.groups.manage", "okta.apps.manage", "okta.policies.manage", "okta.logs.read"]
+          },
+          "description": "Full Okta administration privileges",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T09:00:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "Office 365",
+          "resource_type": "application",
+          "resource_name": "Microsoft Office 365",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "global-admin",
+            "scopes": ["full-access"]
+          },
+          "description": "Office 365 global administrator",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T08:45:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "AWS SSO",
+          "resource_type": "application",
+          "resource_name": "AWS Single Sign-On",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "administrator",
+            "scopes": ["manage-accounts", "manage-permissions"]
+          },
+          "description": "AWS SSO administration",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-18T16:30:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "sales.manager@company.com",
+      "user_name": "Sales Manager",
+      "user_id": "sales.manager@company.com",
+      "department": "Sales",
+      "job_title": "Regional Sales Manager",
+      "manager": "sales-director@company.com",
+      "is_service_account": false,
+      "groups": ["sales-team", "managers", "crm-users"],
+      "roles": ["Sales Manager", "CRM Admin"],
+      "resources": [
+        {
+          "provider": "okta",
+          "service": "Salesforce",
+          "resource_type": "application",
+          "resource_name": "Salesforce CRM",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "system-administrator",
+            "scopes": ["manage-users", "view-setup", "modify-all-data"]
+          },
+          "description": "Salesforce CRM administration",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T14:15:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "HubSpot",
+          "resource_type": "application",
+          "resource_name": "HubSpot Marketing",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "super-admin",
+            "scopes": ["contacts", "companies", "deals", "settings"]
+          },
+          "description": "Marketing automation platform",
+          "risk_level": "medium",
+          "is_privileged": true,
+          "last_used": "2024-12-19T13:20:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "Zoom",
+          "resource_type": "application",
+          "resource_name": "Zoom Video Conferencing",
+          "access_type": "user",
+          "permission_details": {
+            "role": "licensed-user",
+            "scopes": ["meetings", "webinars", "recordings"]
+          },
+          "description": "Video conferencing for sales meetings",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T15:10:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "hr.specialist@company.com",
+      "user_name": "HR Specialist",
+      "user_id": "hr.specialist@company.com",
+      "department": "Human Resources",
+      "job_title": "HR Information Systems Specialist",
+      "manager": "hr-director@company.com",
+      "is_service_account": false,
+      "groups": ["hr-team", "hris-admins", "payroll"],
+      "roles": ["HR Admin", "HRIS Administrator"],
+      "resources": [
+        {
+          "provider": "okta",
+          "service": "Workday",
+          "resource_type": "application",
+          "resource_name": "Workday HCM",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "system-administrator",
+            "scopes": ["employee-data", "payroll", "benefits", "time-tracking"]
+          },
+          "description": "Human Capital Management system",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T12:30:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "BambooHR",
+          "resource_type": "application",
+          "resource_name": "BambooHR",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "full-admin",
+            "scopes": ["employee-info", "time-off", "performance", "reports"]
+          },
+          "description": "HR information system",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T11:45:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "ADP",
+          "resource_type": "application",
+          "resource_name": "ADP Payroll",
+          "access_type": "write",
+          "permission_details": {
+            "role": "payroll-admin",
+            "scopes": ["payroll-processing", "tax-reporting", "employee-setup"]
+          },
+          "description": "Payroll processing system",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T10:20:00Z",
+          "mfa_required": true
+        }
+      ]
+    }
+  ]
+}

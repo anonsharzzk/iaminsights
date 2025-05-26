@@ -1,0 +1,388 @@
+{
+  "metadata": {
+    "import_date": "2024-12-19T10:30:00Z",
+    "source": "comprehensive_audit",
+    "description": "Comprehensive multi-cloud access audit data with diverse user scenarios",
+    "version": "1.0"
+  },
+  "users": [
+    {
+      "user_email": "alex.torres@company.com",
+      "user_name": "Alex Torres",
+      "user_id": "atorres001",
+      "department": "Engineering",
+      "job_title": "Full Stack Developer",
+      "manager": "engineering-lead@company.com",
+      "is_service_account": false,
+      "groups": ["developers", "full-stack-team", "aws-users"],
+      "roles": ["Developer", "S3-User", "Lambda-User"],
+      "resources": [
+        {
+          "provider": "aws",
+          "service": "S3",
+          "resource_type": "bucket",
+          "resource_name": "dev-assets-bucket",
+          "resource_arn": "arn:aws:s3:::dev-assets-bucket",
+          "access_type": "write",
+          "permission_details": {
+            "actions": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+            "effect": "Allow",
+            "resource": "arn:aws:s3:::dev-assets-bucket/*"
+          },
+          "description": "Development assets storage",
+          "region": "us-west-2",
+          "account_id": "123456789012",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T14:22:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "aws",
+          "service": "Lambda",
+          "resource_type": "function",
+          "resource_name": "user-api-functions",
+          "access_type": "write",
+          "permission_details": {
+            "actions": ["lambda:UpdateFunctionCode", "lambda:InvokeFunction"],
+            "effect": "Allow",
+            "resource": "arn:aws:lambda:us-west-2:123456789012:function:user-api-*"
+          },
+          "description": "User API Lambda functions",
+          "region": "us-west-2",
+          "account_id": "123456789012",
+          "risk_level": "medium",
+          "is_privileged": false,
+          "last_used": "2024-12-19T13:45:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "GitHub",
+          "resource_type": "application",
+          "resource_name": "GitHub Enterprise",
+          "access_type": "user",
+          "permission_details": {
+            "role": "developer",
+            "scopes": ["repo", "read:user"]
+          },
+          "description": "GitHub repository access",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T15:30:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "maria.gonzalez@company.com",
+      "user_name": "Maria Gonzalez",
+      "user_id": "mgonzalez002",
+      "department": "Data Science",
+      "job_title": "Senior Data Scientist",
+      "manager": "data-science-lead@company.com",
+      "is_service_account": false,
+      "groups": ["data-scientists", "ml-engineers", "gcp-power-users"],
+      "roles": ["DataScientist", "BigQuery-Analyst", "ML-Engineer"],
+      "resources": [
+        {
+          "provider": "gcp",
+          "service": "BigQuery",
+          "resource_type": "dataset",
+          "resource_name": "customer-analytics",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "roles/bigquery.admin",
+            "resource": "projects/company-analytics/datasets/customer-analytics"
+          },
+          "description": "Customer analytics dataset administration",
+          "region": "us-central1",
+          "account_id": "company-analytics",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T11:15:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "gcp",
+          "service": "AI Platform",
+          "resource_type": "model",
+          "resource_name": "recommendation-models",
+          "access_type": "write",
+          "permission_details": {
+            "role": "roles/ml.developer",
+            "resource": "projects/company-ml/models/*"
+          },
+          "description": "ML model development and deployment",
+          "region": "us-central1",
+          "account_id": "company-ml",
+          "risk_level": "medium",
+          "is_privileged": false,
+          "last_used": "2024-12-18T16:20:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "aws",
+          "service": "SageMaker",
+          "resource_type": "notebook",
+          "resource_name": "ml-experiments",
+          "access_type": "write",
+          "permission_details": {
+            "actions": ["sagemaker:CreateNotebookInstance", "sagemaker:DescribeNotebookInstance"],
+            "effect": "Allow",
+            "resource": "arn:aws:sagemaker:us-east-1:123456789012:notebook-instance/ml-*"
+          },
+          "description": "Machine learning experimentation",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "medium",
+          "is_privileged": false,
+          "last_used": "2024-12-19T09:45:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "robert.kim@company.com",
+      "user_name": "Robert Kim",
+      "user_id": "rkim003",
+      "department": "Security",
+      "job_title": "Security Engineer",
+      "manager": "security-director@company.com",
+      "is_service_account": false,
+      "groups": ["security-team", "incident-response", "compliance"],
+      "roles": ["SecurityEngineer", "IncidentResponder", "ComplianceAuditor"],
+      "resources": [
+        {
+          "provider": "aws",
+          "service": "GuardDuty",
+          "resource_type": "detector",
+          "resource_name": "security-monitoring",
+          "access_type": "admin",
+          "permission_details": {
+            "actions": ["guardduty:*"],
+            "effect": "Allow",
+            "resource": "*"
+          },
+          "description": "Security threat detection management",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T08:30:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "azure",
+          "service": "Security Center",
+          "resource_type": "workspace",
+          "resource_name": "security-workspace",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "Security Admin",
+            "scope": "/subscriptions/12345678-1234-1234-1234-123456789012"
+          },
+          "description": "Azure Security Center administration",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T07:45:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "Okta Admin",
+          "resource_type": "application",
+          "resource_name": "Identity Management",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "super-admin",
+            "scopes": ["okta.users.manage", "okta.groups.manage", "okta.apps.manage"]
+          },
+          "description": "Full Okta administration",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T10:15:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "jennifer.chen@company.com",
+      "user_name": "Jennifer Chen",
+      "user_id": "jchen004",
+      "department": "Finance",
+      "job_title": "Financial Analyst",
+      "manager": "finance-director@company.com",
+      "is_service_account": false,
+      "groups": ["finance-team", "business-analysts", "office-users"],
+      "roles": ["FinancialAnalyst", "ReportViewer"],
+      "resources": [
+        {
+          "provider": "okta",
+          "service": "Salesforce",
+          "resource_type": "application",
+          "resource_name": "CRM System",
+          "access_type": "user",
+          "permission_details": {
+            "role": "standard-user",
+            "scopes": ["read", "edit-opportunities"]
+          },
+          "description": "Customer relationship management",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T14:20:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "Tableau",
+          "resource_type": "application",
+          "resource_name": "Business Intelligence",
+          "access_type": "user",
+          "permission_details": {
+            "role": "viewer",
+            "scopes": ["view-dashboards", "export-data"]
+          },
+          "description": "Financial reporting and analytics",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T13:10:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "aws",
+          "service": "S3",
+          "resource_type": "bucket",
+          "resource_name": "financial-reports",
+          "access_type": "read",
+          "permission_details": {
+            "actions": ["s3:GetObject"],
+            "effect": "Allow",
+            "resource": "arn:aws:s3:::financial-reports/public/*"
+          },
+          "description": "Access to published financial reports",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T12:30:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "devops-automation@company.com",
+      "user_name": "DevOps Automation Service",
+      "user_id": "svc-devops-001",
+      "department": "Engineering",
+      "job_title": "Service Account",
+      "is_service_account": true,
+      "groups": ["service-accounts", "automation", "ci-cd"],
+      "roles": ["AutomationAgent", "DeploymentService"],
+      "resources": [
+        {
+          "provider": "aws",
+          "service": "ECS",
+          "resource_type": "cluster",
+          "resource_name": "production-services",
+          "access_type": "admin",
+          "permission_details": {
+            "actions": ["ecs:*"],
+            "effect": "Allow",
+            "resource": "arn:aws:ecs:us-east-1:123456789012:cluster/production-*"
+          },
+          "description": "Production container orchestration",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T15:45:00Z",
+          "mfa_required": false
+        },
+        {
+          "provider": "gcp",
+          "service": "Cloud Build",
+          "resource_type": "trigger",
+          "resource_name": "automated-deployments",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "roles/cloudbuild.builds.editor",
+            "resource": "projects/company-production/*"
+          },
+          "description": "Automated CI/CD pipeline execution",
+          "account_id": "company-production",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T15:30:00Z",
+          "mfa_required": false
+        },
+        {
+          "provider": "azure",
+          "service": "Container Registry",
+          "resource_type": "registry",
+          "resource_name": "production-images",
+          "access_type": "write",
+          "permission_details": {
+            "role": "AcrPush",
+            "scope": "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/containers/providers/Microsoft.ContainerRegistry/registries/productionimages"
+          },
+          "description": "Container image management",
+          "account_id": "12345678-1234-1234-1234-123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T15:20:00Z",
+          "mfa_required": false
+        }
+      ]
+    },
+    {
+      "user_email": "intern.student@company.com",
+      "user_name": "Student Intern",
+      "user_id": "intern001",
+      "department": "Engineering",
+      "job_title": "Software Engineering Intern",
+      "manager": "alex.torres@company.com",
+      "is_service_account": false,
+      "groups": ["interns", "limited-access"],
+      "roles": ["Intern", "ReadOnly"],
+      "resources": [
+        {
+          "provider": "aws",
+          "service": "S3",
+          "resource_type": "bucket",
+          "resource_name": "sandbox-playground",
+          "access_type": "write",
+          "permission_details": {
+            "actions": ["s3:GetObject", "s3:PutObject"],
+            "effect": "Allow",
+            "resource": "arn:aws:s3:::sandbox-playground/intern/*"
+          },
+          "description": "Learning sandbox environment",
+          "region": "us-west-2",
+          "account_id": "123456789012",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T14:00:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "okta",
+          "service": "GitHub",
+          "resource_type": "application",
+          "resource_name": "GitHub Learning",
+          "access_type": "user",
+          "permission_details": {
+            "role": "read-only",
+            "scopes": ["read:user", "public_repo"]
+          },
+          "description": "Read-only GitHub access for learning",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T13:30:00Z",
+          "mfa_required": true
+        }
+      ]
+    }
+  ]
+}
