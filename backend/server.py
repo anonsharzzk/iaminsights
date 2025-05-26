@@ -1199,7 +1199,7 @@ async def search_by_resource(resource_name: str):
         raise HTTPException(status_code=500, detail="Error searching by resource")
 
 @api_router.get("/analytics", response_model=AccessAnalytics)
-async def get_access_analytics():
+async def get_access_analytics(current_user: User = Depends(get_current_user)):
     """Get comprehensive access analytics and insights"""
     try:
         users = await db.user_access.find().to_list(1000)
