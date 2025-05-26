@@ -22,6 +22,50 @@ from jose import JWTError
 
 # Import enhanced models inline
 
+# Authentication Models
+class UserRole(str, Enum):
+    ADMIN = "admin"
+    USER = "user"
+
+class User(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: EmailStr
+    hashed_password: str
+    role: UserRole = UserRole.USER
+    is_active: bool = True
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_by: Optional[str] = None  # Admin who created the user
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    role: UserRole = UserRole.USER
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    is_active: Optional[bool] = None
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: str
+    email: EmailStr
+    role: UserRole
+    is_active: bool
+    created_at: datetime
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user: UserResponse
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
 class CloudProvider(str, Enum):
     AWS = "aws"
     GCP = "gcp"
