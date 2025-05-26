@@ -197,15 +197,18 @@ backend:
 
   - task: "Data export functionality"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "unknown"
         agent: "main"
         comment: "Implemented GET /api/export/{format} endpoint supporting CSV, JSON, and XLSX export formats with filtering capabilities."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Export functionality working perfectly. Successfully tested CSV, JSON, and XLSX formats. Proper content types and attachment headers. Filtering works correctly (tested with provider=aws&access_type=admin). File sizes appropriate and content validated."
 
   - task: "Individual user risk analysis"
     implemented: true
