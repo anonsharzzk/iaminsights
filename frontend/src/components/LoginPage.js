@@ -26,8 +26,7 @@ const LoginPage = ({ onBack }) => {
   };
 
   const handleDemoLogin = () => {
-    setEmail('adminn@iamsharan.com');
-    setPassword('Testing@123');
+    // Demo login function removed as requested
   };
 
   return (
