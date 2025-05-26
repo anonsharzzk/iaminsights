@@ -6,36 +6,25 @@ import LoginPage from "./components/LoginPage";
 import UserManagement from "./components/UserManagement";
 import SettingsPage from "./components/SettingsPage";
 import CloudAccessVisualizer from "./components/CloudAccessVisualizer";
-import { Shield } from "lucide-react";
+import { Shield, Users, Settings, LogOut, Menu, X } from "lucide-react";
 
-const App = () => {
-  const [showLandingPage, setShowLandingPage] = useState(true);
+const AuthenticatedApp = () => {
+  const { user, logout, isAdmin } = useAuth();
+  const [currentView, setCurrentView] = useState("visualizer");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (showLandingPage) {
-    return <LandingPage onLoginClick={() => setShowLandingPage(false)} />;
-  }
+  const navigation = [
+    { id: "visualizer", name: "Access Visualizer", icon: Shield, available: true },
+    { id: "users", name: "User Management", icon: Users, available: isAdmin },
+    { id: "settings", name: "Settings", icon: Settings, available: true },
+  ];
 
-  return (
-    <AuthProvider>
-      <AuthenticatedAppContent />
-    </AuthProvider>
-  );
-};
-
-const AuthenticatedAppContent = () => {
-  const { user, isAuthenticated } = useAuth();
-  const [activeView, setActiveView] = useState("visualizer");
-
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
-  const renderContent = () => {
-    switch (activeView) {
+  const renderCurrentView = () => {
+    switch (currentView) {
       case "visualizer":
         return <CloudAccessVisualizer />;
       case "users":
-        return <UserManagement />;
+        return isAdmin ? <UserManagement /> : <div className="text-center text-slate-400">Access Denied</div>;
       case "settings":
         return <SettingsPage />;
       default:
@@ -45,51 +34,150 @@ const AuthenticatedAppContent = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      {/* Navigation */}
-      <nav className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-8">
-              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveView("visualizer")}>
-                <Shield className="w-8 h-8 text-blue-400" />
-                <h1 className="text-2xl font-bold text-white">Cloud Access Visualizer</h1>
-              </div>
-              <div className="hidden md:flex items-center space-x-6">
-                <button
-                  onClick={() => setActiveView("visualizer")}
-                  className={`text-sm font-medium ${activeView === "visualizer" ? "text-blue-400" : "text-slate-300 hover:text-white"}`}
-                >
-                  Visualizer
-                </button>
-                {user?.isAdmin && (
-                  <button
-                    onClick={() => setActiveView("users")}
-                    className={`text-sm font-medium ${activeView === "users" ? "text-blue-400" : "text-slate-300 hover:text-white"}`}
-                  >
-                    User Management
-                  </button>
-                )}
-                <button
-                  onClick={() => setActiveView("settings")}
-                  className={`text-sm font-medium ${activeView === "settings" ? "text-blue-400" : "text-slate-300 hover:text-white"}`}
-                >
-                  Settings
-                </button>
-              </div>
+      {/* Header */}
+      <header className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <Shield className="w-8 h-8 text-blue-400" />
+              <h1 className="text-xl font-bold text-white">Cloud Access Visualizer</h1>
             </div>
-            <div className="text-sm text-slate-300">
-              {user?.email}
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex space-x-8">
+              {navigation.filter(item => item.available).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentView(item.id)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                      currentView === item.id
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </button>
+                );
+              })}
+            </nav>
+
+            {/* User Menu */}
+            <div className="flex items-center space-x-4">
+              <div className="hidden md:block text-right">
+                <p className="text-white text-sm font-medium">{user?.email}</p>
+                <p className="text-slate-400 text-xs capitalize">{user?.role}</p>
+              </div>
+              <button
+                onClick={logout}
+                className="flex items-center space-x-2 px-3 py-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-md transition-colors duration-200"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden md:inline">Logout</span>
+              </button>
+              
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                className="md:hidden p-2 text-slate-300 hover:text-white hover:bg-slate-700 rounded-md"
+              >
+                {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
         </div>
-      </nav>
+
+        {/* Mobile Navigation */}
+        {sidebarOpen && (
+          <div className="md:hidden bg-slate-800 border-t border-slate-700">
+            <div className="px-4 py-2 space-y-1">
+              <div className="py-2 border-b border-slate-700">
+                <p className="text-white text-sm font-medium">{user?.email}</p>
+                <p className="text-slate-400 text-xs capitalize">{user?.role}</p>
+              </div>
+              {navigation.filter(item => item.available).map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      setCurrentView(item.id);
+                      setSidebarOpen(false);
+                    }}
+                    className={`flex items-center space-x-2 w-full px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                      currentView === item.id
+                        ? "bg-blue-600 text-white"
+                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </header>
 
       {/* Main Content */}
-      <main>
-        {renderContent()}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {renderCurrentView()}
       </main>
     </div>
   );
+};
+
+const App = () => {
+  const [showLandingPage, setShowLandingPage] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+
+  const handleLoginClick = () => {
+    setShowLandingPage(false);
+    setShowLogin(true);
+  };
+
+  const handleBackToLanding = () => {
+    setShowLogin(false);
+    setShowLandingPage(true);
+  };
+
+  if (showLandingPage) {
+    return <LandingPage onLoginClick={handleLoginClick} />;
+  }
+
+  return (
+    <AuthProvider>
+      <AppContent 
+        showLogin={showLogin}
+        onBackToLanding={handleBackToLanding}
+      />
+    </AuthProvider>
+  );
+};
+
+const AppContent = ({ showLogin, onBackToLanding }) => {
+  const { isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="loading-spinner mx-auto mb-4"></div>
+          <p className="text-slate-300">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage onBack={onBackToLanding} />;
+  }
+
+  return <AuthenticatedApp />;
 };
 
 export default App;
