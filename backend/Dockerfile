@@ -7,12 +7,15 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
 
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         build-essential \
         curl \
+        gcc \
+        libc6-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
