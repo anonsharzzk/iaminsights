@@ -161,7 +161,7 @@ frontend:
     status_history:
       - working: "unknown"
         agent: "main"
-        comment: "Built React component with search interface, cytoscape.js graph visualization, user info panel, statistics cards, and beautiful dark theme UI using Tailwind CSS."
+        comment: "Enhanced React component with cytoscape.js graph visualization, fixed cose-bilkent layout import issue, added filtering, export capabilities, multiple layouts, and interactive features."
 
   - task: "Interactive graph with node styling and layout"
     implemented: true
