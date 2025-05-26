@@ -243,9 +243,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "FastAPI server with cloud access data models"
-    - "Sample data initialization with realistic cloud access"
-    - "Search and graph API endpoints"
+    - "Enhanced JSON import functionality"
+    - "Resource-based search functionality"
+    - "Comprehensive analytics endpoint"
+    - "Data export functionality"
+    - "Individual user risk analysis"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
