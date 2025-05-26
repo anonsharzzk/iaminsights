@@ -123,15 +123,17 @@ const LoginPage = ({ onBack }) => {
         </div>
 
         {/* Back Button */}
-        <div className="text-center">
-          <button
-            onClick={onBack}
-            className="text-slate-400 hover:text-slate-300 transition-colors duration-200 flex items-center justify-center space-x-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Landing Page</span>
-          </button>
-        </div>
+        {onBack && (
+          <div className="text-center">
+            <button
+              onClick={onBack}
+              className="text-slate-400 hover:text-slate-300 transition-colors duration-200 flex items-center justify-center space-x-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Landing Page</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
