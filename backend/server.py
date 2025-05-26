@@ -801,6 +801,245 @@ def generate_graph_data(user_access: UserAccess) -> GraphData:
     return GraphData(nodes=nodes, edges=edges)
 
 # API Routes
+
+# Authentication Endpoints
+@api_router.post("/auth/login", response_model=Token)
+async def login(user_credentials: UserLogin):
+    """Authenticate user and return JWT token"""
+    try:
+        user_doc = await db.users.find_one({"email": user_credentials.email})
+        if not user_doc or not verify_password(user_credentials.password, user_doc["hashed_password"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect email or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        user = User(**user_doc)
+        if not user.is_active:
+            raise HTTPException(status_code=400, detail="Inactive user")
+        
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            data={"sub": user.email}, expires_delta=access_token_expires
+        )
+        
+        user_response = UserResponse(
+            id=user.id,
+            email=user.email,
+            role=user.role,
+            is_active=user.is_active,
+            created_at=user.created_at
+        )
+        
+        return Token(
+            access_token=access_token,
+            token_type="bearer",
+            user=user_response
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@api_router.get("/auth/me", response_model=UserResponse)
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    """Get current user information"""
+    return UserResponse(
+        id=current_user.id,
+        email=current_user.email,
+        role=current_user.role,
+        is_active=current_user.is_active,
+        created_at=current_user.created_at
+    )
+
+# User Management Endpoints (Admin only)
+@api_router.post("/users", response_model=UserResponse)
+async def create_user(
+    user_data: UserCreate,
+    current_admin: User = Depends(get_current_admin_user)
+):
+    """Create a new user (Admin only)"""
+    try:
+        # Check if user already exists
+        existing_user = await db.users.find_one({"email": user_data.email})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Create new user
+        new_user = User(
+            email=user_data.email,
+            hashed_password=hash_password(user_data.password),
+            role=user_data.role,
+            created_by=current_admin.email
+        )
+        
+        await db.users.insert_one(new_user.dict())
+        
+        return UserResponse(
+            id=new_user.id,
+            email=new_user.email,
+            role=new_user.role,
+            is_active=new_user.is_active,
+            created_at=new_user.created_at
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error creating user: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error creating user")
+
+@api_router.get("/users/all", response_model=List[UserResponse])
+async def get_all_system_users(current_admin: User = Depends(get_current_admin_user)):
+    """Get all system users (Admin only)"""
+    try:
+        users = await db.users.find().to_list(1000)
+        return [
+            UserResponse(
+                id=user["id"],
+                email=user["email"],
+                role=user["role"],
+                is_active=user["is_active"],
+                created_at=user["created_at"]
+            )
+            for user in users
+        ]
+    except Exception as e:
+        logging.error(f"Error getting users: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving users")
+
+@api_router.put("/users/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: str,
+    user_data: UserUpdate,
+    current_admin: User = Depends(get_current_admin_user)
+):
+    """Update a user (Admin only)"""
+    try:
+        user_doc = await db.users.find_one({"id": user_id})
+        if not user_doc:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        update_data = {}
+        if user_data.email:
+            # Check if new email is already taken
+            existing_user = await db.users.find_one({"email": user_data.email, "id": {"$ne": user_id}})
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Email already registered")
+            update_data["email"] = user_data.email
+        
+        if user_data.password:
+            update_data["hashed_password"] = hash_password(user_data.password)
+        
+        if user_data.is_active is not None:
+            update_data["is_active"] = user_data.is_active
+        
+        update_data["updated_at"] = datetime.utcnow()
+        
+        await db.users.update_one({"id": user_id}, {"$set": update_data})
+        
+        # Get updated user
+        updated_user_doc = await db.users.find_one({"id": user_id})
+        updated_user = User(**updated_user_doc)
+        
+        return UserResponse(
+            id=updated_user.id,
+            email=updated_user.email,
+            role=updated_user.role,
+            is_active=updated_user.is_active,
+            created_at=updated_user.created_at
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error updating user: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating user")
+
+@api_router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: str,
+    current_admin: User = Depends(get_current_admin_user)
+):
+    """Delete a user (Admin only)"""
+    try:
+        # Prevent admin from deleting themselves
+        if current_admin.id == user_id:
+            raise HTTPException(status_code=400, detail="Cannot delete your own account")
+        
+        result = await db.users.delete_one({"id": user_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {"message": "User deleted successfully"}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting user: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting user")
+
+@api_router.put("/auth/update-profile", response_model=UserResponse)
+async def update_own_profile(
+    user_data: UserUpdate,
+    current_user: User = Depends(get_current_user)
+):
+    """Update current user's own profile"""
+    try:
+        update_data = {}
+        
+        if user_data.email:
+            # Check if new email is already taken
+            existing_user = await db.users.find_one({"email": user_data.email, "id": {"$ne": current_user.id}})
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Email already registered")
+            update_data["email"] = user_data.email
+        
+        if user_data.password:
+            update_data["hashed_password"] = hash_password(user_data.password)
+        
+        update_data["updated_at"] = datetime.utcnow()
+        
+        await db.users.update_one({"id": current_user.id}, {"$set": update_data})
+        
+        # Get updated user
+        updated_user_doc = await db.users.find_one({"id": current_user.id})
+        updated_user = User(**updated_user_doc)
+        
+        return UserResponse(
+            id=updated_user.id,
+            email=updated_user.email,
+            role=updated_user.role,
+            is_active=updated_user.is_active,
+            created_at=updated_user.created_at
+        )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error updating profile: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error updating profile")
+
+# Provider Sample Data Endpoints
+@api_router.get("/providers/samples", response_model=Dict[str, Any])
+async def get_provider_samples(current_user: User = Depends(get_current_user)):
+    """Get sample data formats for all providers"""
+    return PROVIDER_SAMPLES
+
+@api_router.get("/providers/samples/{provider}", response_model=Dict[str, Any])
+async def get_provider_sample(
+    provider: CloudProvider,
+    current_user: User = Depends(get_current_user)
+):
+    """Get sample data format for a specific provider"""
+    if provider not in PROVIDER_SAMPLES:
+        raise HTTPException(status_code=404, detail="Provider sample not found")
+    return PROVIDER_SAMPLES[provider]
+
+# Protected Cloud Access Data Endpoints (All require authentication)
 @api_router.get("/")
 async def root():
     return {"message": "Cloud Access Visualization API", "version": "1.0.0"}
