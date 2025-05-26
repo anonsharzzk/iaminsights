@@ -512,20 +512,128 @@ const CloudAccessVisualizer = () => {
               </div>
             </div>
 
+            {/* Graph Controls & Filters */}
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center">
+                    <Settings className="w-5 h-5 mr-2" />
+                    Graph Controls
+                  </h3>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Provider Filter */}
+                  <div className="flex items-center space-x-2">
+                    <Filter className="w-4 h-4 text-slate-400" />
+                    <label className="text-slate-300 text-sm">Provider:</label>
+                    <select
+                      value={selectedProvider}
+                      onChange={(e) => setSelectedProvider(e.target.value)}
+                      className="bg-slate-700 text-white text-sm rounded px-3 py-1 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All Providers</option>
+                      <option value="aws">AWS</option>
+                      <option value="gcp">GCP</option>
+                      <option value="azure">Azure</option>
+                      <option value="okta">Okta</option>
+                    </select>
+                  </div>
+
+                  {/* Access Type Filter */}
+                  <div className="flex items-center space-x-2">
+                    <Key className="w-4 h-4 text-slate-400" />
+                    <label className="text-slate-300 text-sm">Access:</label>
+                    <select
+                      value={selectedAccessType}
+                      onChange={(e) => setSelectedAccessType(e.target.value)}
+                      className="bg-slate-700 text-white text-sm rounded px-3 py-1 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="all">All Access Types</option>
+                      <option value="read">Read</option>
+                      <option value="write">Write</option>
+                      <option value="admin">Admin</option>
+                      <option value="owner">Owner</option>
+                      <option value="user">User</option>
+                      <option value="execute">Execute</option>
+                    </select>
+                  </div>
+
+                  {/* Layout Selector */}
+                  <div className="flex items-center space-x-2">
+                    <BarChart3 className="w-4 h-4 text-slate-400" />
+                    <label className="text-slate-300 text-sm">Layout:</label>
+                    <select
+                      value={graphLayout}
+                      onChange={(e) => changeLayout(e.target.value)}
+                      className="bg-slate-700 text-white text-sm rounded px-3 py-1 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="cose-bilkent">Smart Layout</option>
+                      <option value="circle">Circle</option>
+                      <option value="grid">Grid</option>
+                      <option value="breadthfirst">Hierarchy</option>
+                    </select>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={resetGraphView}
+                      className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm flex items-center space-x-1"
+                      title="Reset View"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      <span>Reset</span>
+                    </button>
+                    
+                    <button
+                      onClick={exportGraphPNG}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm flex items-center space-x-1"
+                      title="Export as PNG"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>Export</span>
+                    </button>
+
+                    <button
+                      onClick={() => setShowLegend(!showLegend)}
+                      className="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1 rounded text-sm flex items-center space-x-1"
+                      title="Toggle Legend"
+                    >
+                      <Eye className="w-4 h-4" />
+                      <span>Legend</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Graph Visualization */}
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Access Graph Visualization
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold text-white flex items-center">
+                  <BarChart3 className="w-5 h-5 mr-2" />
+                  Access Graph Visualization
+                </h3>
+                {selectedNode && (
+                  <div className="bg-slate-700/50 rounded-lg p-3 max-w-md">
+                    <p className="text-white text-sm font-medium">Selected: {selectedNode.label}</p>
+                    <p className="text-slate-400 text-xs">
+                      Type: {selectedNode.type} 
+                      {selectedNode.provider && ` • Provider: ${selectedNode.provider}`}
+                      {selectedNode.access_type && ` • Access: ${selectedNode.access_type}`}
+                    </p>
+                  </div>
+                )}
+              </div>
               
               {graphData.nodes.length > 0 ? (
-                <div className="bg-slate-900 rounded-lg border border-slate-600" style={{ height: '600px' }}>
+                <div className="bg-slate-900 rounded-lg border border-slate-600" style={{ height: '700px' }}>
                   <CytoscapeComponent
-                    elements={[...graphData.nodes, ...graphData.edges]}
+                    elements={[...getFilteredGraphData().nodes, ...getFilteredGraphData().edges]}
                     style={{ width: '100%', height: '100%' }}
                     stylesheet={cytoscapeStylesheet}
-                    layout={cytoscapeLayout}
+                    layout={getLayoutConfig(graphLayout)}
                     cy={(cy) => {
                       cyRef.current = cy;
                       
@@ -533,7 +641,29 @@ const CloudAccessVisualizer = () => {
                       cy.on('tap', 'node', function(evt) {
                         const node = evt.target;
                         const data = node.data();
+                        setSelectedNode(data);
                         console.log('Node clicked:', data);
+                      });
+
+                      // Add hover effects
+                      cy.on('mouseover', 'node', function(evt) {
+                        const node = evt.target;
+                        node.style('border-width', '4px');
+                      });
+
+                      cy.on('mouseout', 'node', function(evt) {
+                        const node = evt.target;
+                        if (!node.selected()) {
+                          node.style('border-width', '2px');
+                        }
+                      });
+
+                      // Clear selection on background click
+                      cy.on('tap', function(evt) {
+                        if (evt.target === cy) {
+                          setSelectedNode(null);
+                          cy.nodes().unselect();
+                        }
                       });
                     }}
                   />
@@ -543,37 +673,111 @@ const CloudAccessVisualizer = () => {
                   <div className="text-center text-slate-400">
                     <BarChart3 className="w-16 h-16 mx-auto mb-4 opacity-50" />
                     <p>No graph data available</p>
+                    <p className="text-sm mt-2">Search for a user to see their access visualization</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Legend */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Graph Legend</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="w-8 h-8 bg-blue-600 rounded mx-auto mb-2"></div>
-                  <p className="text-white text-sm font-medium">User</p>
-                  <p className="text-slate-400 text-xs">Central node</p>
+            {/* Enhanced Legend */}
+            {showLegend && (
+              <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 mt-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Graph Legend & Guide</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Node Types */}
+                  <div>
+                    <h4 className="text-white font-medium mb-3">Node Types</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                          <Users className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-medium">User</p>
+                          <p className="text-slate-400 text-xs">Central identity node</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center">
+                          <Cloud className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-medium">Cloud Providers</p>
+                          <p className="text-slate-400 text-xs">AWS, GCP, Azure, Okta</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                          <Server className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-medium">Services</p>
+                          <p className="text-slate-400 text-xs">S3, IAM, Compute, etc.</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-slate-500 rounded-lg flex items-center justify-center">
+                          <Database className="w-4 h-4 text-white" />
+                        </div>
+                        <div>
+                          <p className="text-white text-sm font-medium">Resources</p>
+                          <p className="text-slate-400 text-xs">Specific access points</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Access Types */}
+                  <div>
+                    <h4 className="text-white font-medium mb-3">Access Types</h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-4 h-4 bg-green-500 rounded"></div>
+                        <span className="text-green-400 text-sm font-medium">Read</span>
+                        <span className="text-slate-400 text-xs">View permissions</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-4 h-4 bg-yellow-500 rounded"></div>
+                        <span className="text-yellow-400 text-sm font-medium">Write</span>
+                        <span className="text-slate-400 text-xs">Modify permissions</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-4 h-4 bg-red-500 rounded"></div>
+                        <span className="text-red-400 text-sm font-medium">Admin</span>
+                        <span className="text-slate-400 text-xs">Full control</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-4 h-4 bg-purple-500 rounded"></div>
+                        <span className="text-purple-400 text-sm font-medium">Owner</span>
+                        <span className="text-slate-400 text-xs">Resource owner</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                        <span className="text-blue-400 text-sm font-medium">User</span>
+                        <span className="text-slate-400 text-xs">Standard access</span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                        <span className="text-orange-400 text-sm font-medium">Execute</span>
+                        <span className="text-slate-400 text-xs">Run permissions</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <div className="w-8 h-8 bg-orange-500 rounded mx-auto mb-2"></div>
-                  <p className="text-white text-sm font-medium">Providers</p>
-                  <p className="text-slate-400 text-xs">AWS, GCP, Azure, Okta</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-8 h-8 bg-green-600 rounded mx-auto mb-2"></div>
-                  <p className="text-white text-sm font-medium">Read Access</p>
-                  <p className="text-slate-400 text-xs">View permissions</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-8 h-8 bg-red-600 rounded mx-auto mb-2"></div>
-                  <p className="text-white text-sm font-medium">Admin Access</p>
-                  <p className="text-slate-400 text-xs">Full control</p>
+
+                <div className="mt-6 p-4 bg-slate-700/30 rounded-lg">
+                  <h4 className="text-white font-medium mb-2">💡 Tips</h4>
+                  <ul className="text-slate-300 text-sm space-y-1">
+                    <li>• Click any node to see detailed information</li>
+                    <li>• Use filters to focus on specific providers or access types</li>
+                    <li>• Try different layouts to find the best visualization</li>
+                    <li>• Export the graph as PNG for reports and documentation</li>
+                    <li>• Hover over nodes for quick visual feedback</li>
+                  </ul>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>
