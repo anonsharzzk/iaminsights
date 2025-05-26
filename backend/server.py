@@ -20,7 +20,8 @@ import pandas as pd
 from models import (
     CloudProvider, AccessType, RiskLevel, CloudResource, UserAccess,
     IntegrationConfig, JsonImportSchema, SearchFilter, ResourceSearchResult,
-    AccessAnalytics, PrivilegeEscalationPath, ExportRequest
+    AccessAnalytics, PrivilegeEscalationPath, ExportRequest,
+    GraphNode, GraphEdge, GraphData, SearchResponse  # Add graph visualization models
 )
 
 ROOT_DIR = Path(__file__).parent
