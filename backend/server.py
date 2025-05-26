@@ -1431,6 +1431,7 @@ logger = logging.getLogger(__name__)
 @app.on_event("startup")
 async def startup_event():
     """Initialize the application"""
+    await init_default_admin()
     await init_sample_data()
     logging.info("Application startup complete")
 
