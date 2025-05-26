@@ -140,3 +140,26 @@ class ExportRequest(BaseModel):
     filters: Optional[SearchFilter] = None
     include_risk_analysis: bool = True
     include_metadata: bool = False
+
+# Graph Visualization Models
+class GraphNode(BaseModel):
+    id: str
+    label: str
+    type: str  # "user", "provider", "service", "resource"
+    provider: Optional[str] = None
+    access_type: Optional[str] = None
+    color: Optional[str] = None
+
+class GraphEdge(BaseModel):
+    id: str
+    source: str
+    target: str
+    label: Optional[str] = None
+
+class GraphData(BaseModel):
+    nodes: List[GraphNode]
+    edges: List[GraphEdge]
+
+class SearchResponse(BaseModel):
+    user: Optional[UserAccess]
+    graph_data: GraphData
