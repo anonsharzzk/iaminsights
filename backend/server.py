@@ -259,6 +259,18 @@ async def process_json_import(json_data: Dict[str, Any]) -> Dict[str, Any]:
             # Convert resources to CloudResource objects
             resources = []
             for resource_data in user_data.get("resources", []):
+                # Handle datetime parsing for last_used field
+                if "last_used" in resource_data and resource_data["last_used"]:
+                    try:
+                        # Parse ISO datetime string and convert to naive datetime
+                        from dateutil import parser
+                        dt = parser.parse(resource_data["last_used"])
+                        # Convert to naive datetime (remove timezone info)
+                        resource_data["last_used"] = dt.replace(tzinfo=None)
+                    except Exception as e:
+                        logging.warning(f"Could not parse last_used datetime: {e}")
+                        resource_data["last_used"] = None
+                
                 resource = CloudResource(**resource_data)
                 resources.append(resource)
             
