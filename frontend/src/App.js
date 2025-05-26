@@ -19,6 +19,11 @@ const CloudAccessVisualizer = () => {
   const [loading, setLoading] = useState(false);
   const [statistics, setStatistics] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState("all");
+  const [selectedAccessType, setSelectedAccessType] = useState("all");
+  const [showLegend, setShowLegend] = useState(true);
+  const [graphLayout, setGraphLayout] = useState("cose-bilkent");
+  const [selectedNode, setSelectedNode] = useState(null);
   const cyRef = useRef();
 
   // Cytoscape layout and styling
