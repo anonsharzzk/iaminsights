@@ -98,28 +98,7 @@ const LoginPage = ({ onBack }) => {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600">
-            <h3 className="text-sm font-medium text-slate-300 mb-2">Demo Credentials</h3>
-            <p className="text-xs text-slate-400 mb-3">Use these credentials for testing:</p>
-            <div className="space-y-1 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Email:</span>
-                <span className="text-slate-300 font-mono">adminn@iamsharan.com</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Password:</span>
-                <span className="text-slate-300 font-mono">Testing@123</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              className="w-full mt-3 bg-slate-600 hover:bg-slate-500 text-white py-2 rounded text-sm transition-colors duration-200"
-            >
-              Use Demo Credentials
-            </button>
-          </div>
+          {/* Demo Credentials - REMOVED as requested */}
         </div>
 
         {/* Back Button */}
