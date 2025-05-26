@@ -16,6 +16,12 @@ services:
       - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
     networks:
       - cloud-access-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   backend:
     build:
@@ -27,14 +33,23 @@ services:
       - MONGO_URL=mongodb://admin:cloudaccess123@mongodb:27017/cloud_access?authSource=admin
       - DB_NAME=cloud_access
       - JWT_SECRET_KEY=your-super-secure-jwt-secret-key-change-in-production
+      - ENVIRONMENT=development
     ports:
       - "8001:8001"
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
     volumes:
       - ./backend:/app
+      - /app/__pycache__
     networks:
       - cloud-access-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   frontend:
     build:
@@ -44,19 +59,33 @@ services:
     restart: unless-stopped
     environment:
       - REACT_APP_BACKEND_URL=http://localhost:8001
+      - HOST=0.0.0.0
+      - PORT=3000
+      - WATCHPACK_POLLING=true
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     volumes:
       - ./frontend:/app
       - /app/node_modules
     networks:
       - cloud-access-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   mongodb_data:
+    driver: local
 
 networks:
   cloud-access-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
