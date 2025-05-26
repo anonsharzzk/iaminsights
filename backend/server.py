@@ -320,25 +320,25 @@ async def init_sample_data():
             "user_name": "Alice Johnson",
             "resources": [
                 # AWS Resources
-                {"provider": "aws", "service": "S3", "resource_name": "production-data-bucket", "access_type": "read", "description": "Read access to production data"},
-                {"provider": "aws", "service": "S3", "resource_name": "backup-bucket", "access_type": "write", "description": "Write access for backups"},
-                {"provider": "aws", "service": "EC2", "resource_name": "web-server-01", "access_type": "admin", "description": "Full admin access to web servers"},
-                {"provider": "aws", "service": "IAM", "resource_name": "developer-role", "access_type": "read", "description": "Read IAM policies"},
-                {"provider": "aws", "service": "RDS", "resource_name": "prod-database", "access_type": "read", "description": "Read access to production database"},
+                {"provider": "aws", "service": "S3", "resource_type": "bucket", "resource_name": "production-data-bucket", "access_type": "read", "description": "Read access to production data"},
+                {"provider": "aws", "service": "S3", "resource_type": "bucket", "resource_name": "backup-bucket", "access_type": "write", "description": "Write access for backups"},
+                {"provider": "aws", "service": "EC2", "resource_type": "instance", "resource_name": "web-server-01", "access_type": "admin", "description": "Full admin access to web servers"},
+                {"provider": "aws", "service": "IAM", "resource_type": "role", "resource_name": "developer-role", "access_type": "read", "description": "Read IAM policies"},
+                {"provider": "aws", "service": "RDS", "resource_type": "database", "resource_name": "prod-database", "access_type": "read", "description": "Read access to production database"},
                 
                 # GCP Resources
-                {"provider": "gcp", "service": "Compute Engine", "resource_name": "analytics-vm", "access_type": "admin", "description": "Admin access to analytics VM"},
-                {"provider": "gcp", "service": "Cloud Storage", "resource_name": "ml-models-bucket", "access_type": "write", "description": "Upload ML models"},
-                {"provider": "gcp", "service": "BigQuery", "resource_name": "analytics-dataset", "access_type": "read", "description": "Query analytics data"},
+                {"provider": "gcp", "service": "Compute Engine", "resource_type": "instance", "resource_name": "analytics-vm", "access_type": "admin", "description": "Admin access to analytics VM"},
+                {"provider": "gcp", "service": "Cloud Storage", "resource_type": "bucket", "resource_name": "ml-models-bucket", "access_type": "write", "description": "Upload ML models"},
+                {"provider": "gcp", "service": "BigQuery", "resource_type": "dataset", "resource_name": "analytics-dataset", "access_type": "read", "description": "Query analytics data"},
                 
                 # Azure Resources
-                {"provider": "azure", "service": "Storage", "resource_name": "logs-storage", "access_type": "read", "description": "Read application logs"},
-                {"provider": "azure", "service": "Virtual Machines", "resource_name": "test-vm", "access_type": "write", "description": "Manage test environments"},
+                {"provider": "azure", "service": "Storage", "resource_type": "storage", "resource_name": "logs-storage", "access_type": "read", "description": "Read application logs"},
+                {"provider": "azure", "service": "Virtual Machines", "resource_type": "instance", "resource_name": "test-vm", "access_type": "write", "description": "Manage test environments"},
                 
                 # Okta Applications
-                {"provider": "okta", "service": "Salesforce", "resource_name": "CRM System", "access_type": "user", "description": "Standard user access"},
-                {"provider": "okta", "service": "Slack", "resource_name": "Team Communication", "access_type": "admin", "description": "Slack workspace admin"},
-                {"provider": "okta", "service": "GitHub", "resource_name": "Code Repository", "access_type": "admin", "description": "Repository admin access"},
+                {"provider": "okta", "service": "Salesforce", "resource_type": "application", "resource_name": "CRM System", "access_type": "user", "description": "Standard user access"},
+                {"provider": "okta", "service": "Slack", "resource_type": "application", "resource_name": "Team Communication", "access_type": "admin", "description": "Slack workspace admin"},
+                {"provider": "okta", "service": "GitHub", "resource_type": "application", "resource_name": "Code Repository", "access_type": "admin", "description": "Repository admin access"},
             ]
         },
         {
@@ -346,21 +346,21 @@ async def init_sample_data():
             "user_name": "Bob Smith",
             "resources": [
                 # AWS Resources
-                {"provider": "aws", "service": "S3", "resource_name": "development-bucket", "access_type": "admin", "description": "Full access to dev environment"},
-                {"provider": "aws", "service": "Lambda", "resource_name": "api-functions", "access_type": "write", "description": "Deploy serverless functions"},
-                {"provider": "aws", "service": "CloudWatch", "resource_name": "monitoring", "access_type": "read", "description": "Monitor application metrics"},
+                {"provider": "aws", "service": "S3", "resource_type": "bucket", "resource_name": "development-bucket", "access_type": "admin", "description": "Full access to dev environment"},
+                {"provider": "aws", "service": "Lambda", "resource_type": "function", "resource_name": "api-functions", "access_type": "write", "description": "Deploy serverless functions"},
+                {"provider": "aws", "service": "CloudWatch", "resource_type": "logs", "resource_name": "monitoring", "access_type": "read", "description": "Monitor application metrics"},
                 
                 # GCP Resources
-                {"provider": "gcp", "service": "Cloud Functions", "resource_name": "data-processing", "access_type": "admin", "description": "Manage data processing functions"},
-                {"provider": "gcp", "service": "Pub/Sub", "resource_name": "event-streaming", "access_type": "write", "description": "Publish events"},
+                {"provider": "gcp", "service": "Cloud Functions", "resource_type": "function", "resource_name": "data-processing", "access_type": "admin", "description": "Manage data processing functions"},
+                {"provider": "gcp", "service": "Pub/Sub", "resource_type": "topic", "resource_name": "event-streaming", "access_type": "write", "description": "Publish events"},
                 
                 # Azure Resources
-                {"provider": "azure", "service": "App Service", "resource_name": "web-application", "access_type": "admin", "description": "Deploy web applications"},
-                {"provider": "azure", "service": "Key Vault", "resource_name": "secrets-vault", "access_type": "read", "description": "Access application secrets"},
+                {"provider": "azure", "service": "App Service", "resource_type": "webapp", "resource_name": "web-application", "access_type": "admin", "description": "Deploy web applications"},
+                {"provider": "azure", "service": "Key Vault", "resource_type": "vault", "resource_name": "secrets-vault", "access_type": "read", "description": "Access application secrets"},
                 
                 # Okta Applications
-                {"provider": "okta", "service": "JIRA", "resource_name": "Project Management", "access_type": "user", "description": "Track project issues"},
-                {"provider": "okta", "service": "Confluence", "resource_name": "Documentation", "access_type": "admin", "description": "Manage team documentation"},
+                {"provider": "okta", "service": "JIRA", "resource_type": "application", "resource_name": "Project Management", "access_type": "user", "description": "Track project issues"},
+                {"provider": "okta", "service": "Confluence", "resource_type": "application", "resource_name": "Documentation", "access_type": "admin", "description": "Manage team documentation"},
             ]
         },
         {
@@ -368,21 +368,21 @@ async def init_sample_data():
             "user_name": "Carol Davis",
             "resources": [
                 # AWS Resources (Security focused)
-                {"provider": "aws", "service": "IAM", "resource_name": "security-policies", "access_type": "admin", "description": "Manage security policies"},
-                {"provider": "aws", "service": "CloudTrail", "resource_name": "audit-logs", "access_type": "read", "description": "Review audit trails"},
-                {"provider": "aws", "service": "GuardDuty", "resource_name": "threat-detection", "access_type": "admin", "description": "Manage threat detection"},
+                {"provider": "aws", "service": "IAM", "resource_type": "policy", "resource_name": "security-policies", "access_type": "admin", "description": "Manage security policies"},
+                {"provider": "aws", "service": "CloudTrail", "resource_type": "logs", "resource_name": "audit-logs", "access_type": "read", "description": "Review audit trails"},
+                {"provider": "aws", "service": "GuardDuty", "resource_type": "detector", "resource_name": "threat-detection", "access_type": "admin", "description": "Manage threat detection"},
                 
                 # GCP Resources
-                {"provider": "gcp", "service": "Security Center", "resource_name": "vulnerability-scan", "access_type": "admin", "description": "Security monitoring"},
-                {"provider": "gcp", "service": "Cloud IAM", "resource_name": "access-control", "access_type": "admin", "description": "Manage access policies"},
+                {"provider": "gcp", "service": "Security Center", "resource_type": "scanner", "resource_name": "vulnerability-scan", "access_type": "admin", "description": "Security monitoring"},
+                {"provider": "gcp", "service": "Cloud IAM", "resource_type": "policy", "resource_name": "access-control", "access_type": "admin", "description": "Manage access policies"},
                 
                 # Azure Resources
-                {"provider": "azure", "service": "Security Center", "resource_name": "compliance-monitoring", "access_type": "admin", "description": "Monitor compliance"},
-                {"provider": "azure", "service": "Active Directory", "resource_name": "user-management", "access_type": "admin", "description": "Manage user accounts"},
+                {"provider": "azure", "service": "Security Center", "resource_type": "compliance", "resource_name": "compliance-monitoring", "access_type": "admin", "description": "Monitor compliance"},
+                {"provider": "azure", "service": "Active Directory", "resource_type": "directory", "resource_name": "user-management", "access_type": "admin", "description": "Manage user accounts"},
                 
                 # Okta Applications
-                {"provider": "okta", "service": "Okta Admin", "resource_name": "Identity Management", "access_type": "admin", "description": "Manage identity and access"},
-                {"provider": "okta", "service": "OneLogin", "resource_name": "SSO Portal", "access_type": "admin", "description": "Single sign-on management"},
+                {"provider": "okta", "service": "Okta Admin", "resource_type": "application", "resource_name": "Identity Management", "access_type": "admin", "description": "Manage identity and access"},
+                {"provider": "okta", "service": "OneLogin", "resource_type": "application", "resource_name": "SSO Portal", "access_type": "admin", "description": "Single sign-on management"},
             ]
         }
     ]
