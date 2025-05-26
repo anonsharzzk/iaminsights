@@ -1,10 +1,19 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
+import { AuthProvider, useAuth } from "./components/AuthContext";
+import LandingPage from "./components/LandingPage";
+import LoginPage from "./components/LoginPage";
+import UserManagement from "./components/UserManagement";
+import SettingsPage from "./components/SettingsPage";
 import axios from "axios";
 import CytoscapeComponent from "react-cytoscapejs";
 import cytoscape from "cytoscape";
 import coseBilkent from "cytoscape-cose-bilkent";
-import { Search, Users, Shield, BarChart3, Cloud, Server, Database, Key, Download, RefreshCw, Filter, Eye, Settings } from "lucide-react";
+import { 
+  Search, Users, Shield, BarChart3, Cloud, Server, Database, Key, 
+  Download, RefreshCw, Filter, Eye, Settings, Upload, LogOut, Menu,
+  X, FileText, AlertTriangle, CheckCircle, User, Home
+} from "lucide-react";
 
 // Register the layout extension
 cytoscape.use(coseBilkent);
@@ -12,10 +21,12 @@ cytoscape.use(coseBilkent);
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const CloudAccessVisualizer = () => {
+const AuthenticatedApp = () => {
+  const { user, logout, isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [searchEmail, setSearchEmail] = useState("");
   const [searchResource, setSearchResource] = useState("");
-  const [searchType, setSearchType] = useState("user"); // user, resource
+  const [searchType, setSearchType] = useState("user");
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const [userInfo, setUserInfo] = useState(null);
   const [resourceResults, setResourceResults] = useState([]);
@@ -28,10 +39,392 @@ const CloudAccessVisualizer = () => {
   const [showLegend, setShowLegend] = useState(true);
   const [graphLayout, setGraphLayout] = useState("cose-bilkent");
   const [selectedNode, setSelectedNode] = useState(null);
-  const [activeTab, setActiveTab] = useState("search"); // search, import, analytics, export
   const [importFile, setImportFile] = useState(null);
+  const [selectedImportProvider, setSelectedImportProvider] = useState("aws");
+  const [providerSamples, setProviderSamples] = useState({});
   const [importResult, setImportResult] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const cyRef = useRef();
+
+  // Cytoscape layout and styling (same as before)
+  const cytoscapeStylesheet = [
+    {
+      selector: 'node',
+      style: {
+        'background-color': 'data(color)',
+        'label': 'data(label)',
+        'color': '#fff',
+        'text-valign': 'center',
+        'text-halign': 'center',
+        'font-size': '12px',
+        'font-weight': 'bold',
+        'text-outline-width': 2,
+        'text-outline-color': '#000',
+        'text-wrap': 'wrap',
+        'text-max-width': '120px',
+        'width': 'mapData(type, user, resource, 80, 60)',
+        'height': 'mapData(type, user, resource, 80, 60)',
+        'border-width': 2,
+        'border-color': '#333'
+      }
+    },
+    {
+      selector: 'node[type="user"]',
+      style: {
+        'shape': 'round-rectangle',
+        'width': 120,
+        'height': 80,
+        'background-color': '#2563eb',
+        'border-color': '#1d4ed8'
+      }
+    },
+    {
+      selector: 'node[type="provider"]',
+      style: {
+        'shape': 'round-rectangle',
+        'width': 100,
+        'height': 70,
+        'font-size': '14px',
+        'border-color': '#374151'
+      }
+    },
+    {
+      selector: 'node[type="service"]',
+      style: {
+        'shape': 'ellipse',
+        'width': 80,
+        'height': 60,
+        'font-size': '11px'
+      }
+    },
+    {
+      selector: 'node[type="resource"]',
+      style: {
+        'shape': 'round-rectangle',
+        'width': 70,
+        'height': 50,
+        'font-size': '10px'
+      }
+    },
+    {
+      selector: 'edge',
+      style: {
+        'width': 3,
+        'line-color': '#6b7280',
+        'target-arrow-color': '#6b7280',
+        'target-arrow-shape': 'triangle',
+        'curve-style': 'bezier',
+        'arrow-scale': 1.2,
+        'label': 'data(label)',
+        'font-size': '10px',
+        'color': '#374151',
+        'text-rotation': 'autorotate',
+        'text-margin-y': -10
+      }
+    },
+    {
+      selector: ':selected',
+      style: {
+        'border-width': 4,
+        'border-color': '#fbbf24'
+      }
+    }
+  ];
+
+  const getLayoutConfig = (layoutName) => {
+    const layouts = {
+      'cose-bilkent': {
+        name: 'cose-bilkent',
+        quality: 'default',
+        nodeDimensionsIncludeLabels: true,
+        fit: true,
+        padding: 20,
+        randomize: false,
+        nodeRepulsion: 4500,
+        idealEdgeLength: 100,
+        edgeElasticity: 0.45,
+        nestingFactor: 0.1,
+        gravity: 0.25,
+        numIter: 2500,
+        tile: false,
+        animate: 'end',
+        animationDuration: 1000
+      },
+      'circle': {
+        name: 'circle',
+        fit: true,
+        padding: 30,
+        avoidOverlap: true,
+        animate: true,
+        animationDuration: 500
+      },
+      'grid': {
+        name: 'grid',
+        fit: true,
+        padding: 30,
+        avoidOverlap: true,
+        animate: true,
+        animationDuration: 500
+      },
+      'breadthfirst': {
+        name: 'breadthfirst',
+        fit: true,
+        directed: false,
+        padding: 30,
+        spacingFactor: 1.75,
+        avoidOverlap: true,
+        animate: true,
+        animationDuration: 500
+      }
+    };
+    
+    return layouts[layoutName] || layouts['cose-bilkent'];
+  };
+
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchStatistics();
+    fetchAllUsers();
+    fetchAnalytics();
+    fetchProviderSamples();
+  }, []);
+
+  const fetchStatistics = async () => {
+    try {
+      const response = await axios.get(`${API}/providers`);
+      setStatistics(response.data);
+    } catch (error) {
+      console.error("Error fetching statistics:", error);
+    }
+  };
+
+  const fetchAllUsers = async () => {
+    try {
+      const response = await axios.get(`${API}/users`);
+      setAllUsers(response.data);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await axios.get(`${API}/analytics`);
+      setAnalytics(response.data);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    }
+  };
+
+  const fetchProviderSamples = async () => {
+    try {
+      const response = await axios.get(`${API}/providers/samples`);
+      setProviderSamples(response.data);
+    } catch (error) {
+      console.error("Error fetching provider samples:", error);
+    }
+  };
+
+  // Filter graph data based on selected filters
+  const getFilteredGraphData = () => {
+    if (!userInfo) return { nodes: [], edges: [] };
+
+    let filteredNodes = [...graphData.nodes];
+    let filteredEdges = [...graphData.edges];
+
+    // Filter by provider
+    if (selectedProvider !== "all") {
+      const allowedNodeIds = new Set();
+      
+      const userNode = filteredNodes.find(node => node.data.type === "user");
+      if (userNode) allowedNodeIds.add(userNode.data.id);
+      
+      filteredNodes.forEach(node => {
+        const data = node.data;
+        if (data.provider === selectedProvider || data.type === "user") {
+          allowedNodeIds.add(data.id);
+        }
+      });
+      
+      filteredNodes = filteredNodes.filter(node => allowedNodeIds.has(node.data.id));
+      filteredEdges = filteredEdges.filter(edge => 
+        allowedNodeIds.has(edge.data.source) && allowedNodeIds.has(edge.data.target)
+      );
+    }
+
+    // Filter by access type
+    if (selectedAccessType !== "all") {
+      const allowedNodeIds = new Set();
+      
+      filteredNodes.forEach(node => {
+        const data = node.data;
+        if (data.type === "user" || data.type === "provider" || data.type === "service") {
+          allowedNodeIds.add(data.id);
+        } else if (data.type === "resource" && data.access_type === selectedAccessType) {
+          allowedNodeIds.add(data.id);
+        }
+      });
+      
+      filteredNodes = filteredNodes.filter(node => allowedNodeIds.has(node.data.id));
+      filteredEdges = filteredEdges.filter(edge => 
+        allowedNodeIds.has(edge.data.source) && allowedNodeIds.has(edge.data.target)
+      );
+    }
+
+    return { nodes: filteredNodes, edges: filteredEdges };
+  };
+
+  const handleSearch = async () => {
+    if (searchType === "user") {
+      await handleUserSearch();
+    } else {
+      await handleResourceSearch();
+    }
+  };
+
+  const handleUserSearch = async () => {
+    if (!searchEmail.trim()) return;
+    
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/search/${encodeURIComponent(searchEmail)}`);
+      const data = response.data;
+      
+      if (data.user) {
+        setUserInfo(data.user);
+        setResourceResults([]);
+        const nodes = data.graph_data.nodes.map(node => ({
+          data: { 
+            id: node.id, 
+            label: node.label, 
+            type: node.type,
+            provider: node.provider,
+            access_type: node.access_type,
+            color: node.color 
+          }
+        }));
+        
+        const edges = data.graph_data.edges.map(edge => ({
+          data: { 
+            id: edge.id, 
+            source: edge.source, 
+            target: edge.target, 
+            label: edge.label 
+          }
+        }));
+        
+        setGraphData({ nodes, edges });
+      } else {
+        setUserInfo(null);
+        setGraphData({ nodes: [], edges: [] });
+        alert("User not found in the system");
+      }
+    } catch (error) {
+      console.error("Error searching user:", error);
+      alert("Error searching for user access data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResourceSearch = async () => {
+    if (!searchResource.trim()) return;
+    
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/search/resource/${encodeURIComponent(searchResource)}`);
+      setResourceResults(response.data);
+      setUserInfo(null);
+      setGraphData({ nodes: [], edges: [] });
+    } catch (error) {
+      console.error("Error searching resource:", error);
+      alert("Error searching for resource access data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileImport = async () => {
+    if (!importFile) return;
+    
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      
+      const response = await axios.post(`${API}/import/json`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      setImportResult(response.data);
+      setImportFile(null);
+      
+      // Refresh data
+      await fetchAllUsers();
+      await fetchStatistics();
+      await fetchAnalytics();
+      
+      alert(`Successfully imported ${response.data.imported_users} users!`);
+    } catch (error) {
+      console.error("Error importing file:", error);
+      alert("Error importing file: " + (error.response?.data?.detail || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async (format) => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedProvider !== "all") params.append('provider', selectedProvider);
+      if (selectedAccessType !== "all") params.append('access_type', selectedAccessType);
+      
+      const url = `${API}/export/${format}?${params.toString()}`;
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      alert("Error exporting data");
+    }
+  };
+
+  const resetGraphView = () => {
+    if (cyRef.current) {
+      cyRef.current.fit();
+      cyRef.current.center();
+    }
+  };
+
+  const changeLayout = (layoutName) => {
+    setGraphLayout(layoutName);
+    if (cyRef.current) {
+      const layout = cyRef.current.layout(getLayoutConfig(layoutName));
+      layout.run();
+    }
+  };
+
+  const exportGraphPNG = () => {
+    if (cyRef.current) {
+      const png64 = cyRef.current.png();
+      const link = document.createElement('a');
+      link.download = `cloud-access-${searchEmail}-${Date.now()}.png`;
+      link.href = png64;
+      link.click();
+    }
+  };
+
+  const getProviderIcon = (provider) => {
+    switch (provider) {
+      case 'aws': return '☁️';
+      case 'gcp': return '🌩️';
+      case 'azure': return '⭐';
+      case 'okta': return '🔐';
+      default: return '🌐';
+    }
+  };
+
+  const renderDashboard = () => (
 
   // Cytoscape layout and styling
   const cytoscapeStylesheet = [
