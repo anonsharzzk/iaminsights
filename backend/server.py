@@ -1159,7 +1159,10 @@ async def import_json_data(
         raise HTTPException(status_code=500, detail=f"Error importing data: {str(e)}")
 
 @api_router.get("/search/resource/{resource_name}", response_model=List[ResourceSearchResult])
-async def search_by_resource(resource_name: str):
+async def search_by_resource(
+    resource_name: str,
+    current_user: User = Depends(get_current_user)
+):
     """Search for users who have access to a specific resource"""
     try:
         users = await db.user_access.find().to_list(1000)
