@@ -38,62 +38,158 @@ app = FastAPI(title="Cloud Access Visualization API", version="1.0.0")
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Enums for cloud providers and access types
-class CloudProvider(str, Enum):
-    AWS = "aws"
-    GCP = "gcp"
-    AZURE = "azure"
-    OKTA = "okta"
+# Remove old enum definitions since they're now in models.py
+ROOT_DIR = Path(__file__).parent
+load_dotenv(ROOT_DIR / '.env')
 
-class AccessType(str, Enum):
-    READ = "read"
-    WRITE = "write"
-    ADMIN = "admin"
-    OWNER = "owner"
-    USER = "user"
-    EXECUTE = "execute"
-    DELETE = "delete"
+# MongoDB connection
+mongo_url = os.environ['MONGO_URL']
+client = AsyncIOMotorClient(mongo_url)
+db = client[os.environ['DB_NAME']]
 
-# Database Models
-class CloudResource(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    provider: CloudProvider
-    service: str  # e.g., "S3", "IAM", "Compute Engine", "Salesforce"
-    resource_name: str  # e.g., "bucket-name", "vm-instance-1"
-    access_type: AccessType
-    description: Optional[str] = None
+# Create the main app without a prefix
+app = FastAPI(title="Cloud Access Visualization API", version="2.0.0")
 
-class UserAccess(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    user_email: str
-    user_name: str
-    resources: List[CloudResource]
-    last_updated: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+# Create a router with the /api prefix
+api_router = APIRouter(prefix="/api")
 
-class GraphNode(BaseModel):
-    id: str
-    label: str
-    type: str  # "user", "provider", "service", "resource"
-    provider: Optional[str] = None
-    access_type: Optional[str] = None
-    color: Optional[str] = None
+# Risk Analysis Functions
+def calculate_risk_score(user_access: UserAccess) -> float:
+    """Calculate overall risk score for a user based on their access patterns"""
+    risk_score = 0.0
+    
+    # Base risk factors
+    admin_count = sum(1 for resource in user_access.resources if resource.access_type == AccessType.ADMIN)
+    privileged_count = sum(1 for resource in user_access.resources if resource.is_privileged)
+    providers = set(resource.provider for resource in user_access.resources)
+    
+    # Risk scoring logic
+    risk_score += admin_count * 10  # Admin access adds significant risk
+    risk_score += privileged_count * 5  # Privileged access adds moderate risk
+    risk_score += len(providers) * 3  # Cross-provider access adds risk
+    
+    # Service account risk adjustment
+    if user_access.is_service_account:
+        risk_score *= 1.5  # Service accounts are higher risk
+    
+    # Cross-provider admin bonus risk
+    if admin_count > 0 and len(providers) > 2:
+        risk_score += 20
+        user_access.cross_provider_admin = True
+    
+    return min(risk_score, 100.0)  # Cap at 100
 
-class GraphEdge(BaseModel):
-    id: str
-    source: str
-    target: str
-    label: Optional[str] = None
+def detect_privilege_escalation_paths(user_access: UserAccess) -> List[PrivilegeEscalationPath]:
+    """Detect potential privilege escalation paths for a user"""
+    paths = []
+    
+    # Simple escalation detection: read -> write -> admin within same service
+    services_access = {}
+    for resource in user_access.resources:
+        key = f"{resource.provider}-{resource.service}"
+        if key not in services_access:
+            services_access[key] = []
+        services_access[key].append(resource.access_type)
+    
+    for service, access_types in services_access.items():
+        access_set = set(access_types)
+        if AccessType.READ in access_set and AccessType.ADMIN in access_set:
+            paths.append(PrivilegeEscalationPath(
+                user_email=user_access.user_email,
+                start_privilege="read",
+                end_privilege="admin",
+                path_steps=[
+                    {"step": 1, "action": "exploit_read_access", "service": service},
+                    {"step": 2, "action": "escalate_to_admin", "service": service}
+                ],
+                risk_score=calculate_escalation_risk(access_set)
+            ))
+    
+    return paths
 
-class GraphData(BaseModel):
-    nodes: List[GraphNode]
-    edges: List[GraphEdge]
+def calculate_escalation_risk(access_types: set) -> float:
+    """Calculate risk score for privilege escalation"""
+    base_risk = 30.0
+    if AccessType.WRITE in access_types:
+        base_risk += 20.0
+    if AccessType.ADMIN in access_types:
+        base_risk += 30.0
+    return min(base_risk, 100.0)
 
-class SearchResponse(BaseModel):
-    user: Optional[UserAccess]
-    graph_data: GraphData
+def analyze_user_access(user_access: UserAccess) -> UserAccess:
+    """Perform comprehensive risk analysis on user access"""
+    user_access.overall_risk_score = calculate_risk_score(user_access)
+    user_access.privilege_escalation_paths = detect_privilege_escalation_paths(user_access)
+    
+    # Detect unused privileges (simulate - in real implementation, this would use last_used data)
+    user_access.unused_privileges = [
+        f"{resource.provider}-{resource.service}"
+        for resource in user_access.resources
+        if resource.last_used and (datetime.utcnow() - resource.last_used).days > 90
+    ]
+    
+    return user_access
 
-# Sample data initialization
+# JSON Import Functions
+async def process_json_import(json_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Process imported JSON data and save to database"""
+    try:
+        # Validate JSON structure
+        users_data = json_data.get("users", [])
+        metadata = json_data.get("metadata", {})
+        
+        processed_users = []
+        for user_data in users_data:
+            # Convert resources to CloudResource objects
+            resources = []
+            for resource_data in user_data.get("resources", []):
+                resource = CloudResource(**resource_data)
+                resources.append(resource)
+            
+            # Create UserAccess object
+            user_access = UserAccess(
+                user_email=user_data["user_email"],
+                user_name=user_data["user_name"],
+                user_id=user_data.get("user_id"),
+                department=user_data.get("department"),
+                job_title=user_data.get("job_title"),
+                manager=user_data.get("manager"),
+                is_service_account=user_data.get("is_service_account", False),
+                resources=resources,
+                groups=user_data.get("groups", []),
+                roles=user_data.get("roles", []),
+                data_source="json_import"
+            )
+            
+            # Perform risk analysis
+            user_access = analyze_user_access(user_access)
+            processed_users.append(user_access)
+        
+        # Save to database
+        for user_access in processed_users:
+            # Check if user already exists
+            existing_user = await db.user_access.find_one({"user_email": user_access.user_email})
+            if existing_user:
+                # Update existing user
+                await db.user_access.replace_one(
+                    {"user_email": user_access.user_email},
+                    user_access.dict()
+                )
+            else:
+                # Insert new user
+                await db.user_access.insert_one(user_access.dict())
+        
+        return {
+            "status": "success",
+            "imported_users": len(processed_users),
+            "metadata": metadata
+        }
+    
+    except Exception as e:
+        logging.error(f"Error processing JSON import: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error processing JSON: {str(e)}")
+
+# Enhanced sample data initialization
 async def init_sample_data():
     """Initialize the database with realistic sample data"""
     # Check if data already exists
