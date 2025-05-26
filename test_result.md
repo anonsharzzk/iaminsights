@@ -150,6 +150,66 @@ backend:
         agent: "testing"
         comment: "✅ TESTED: All API endpoints working correctly. Search functionality returns proper graph data with nodes and edges. User endpoints return correct data. Provider statistics working. Fixed minor error handling issue for non-existent users (404 vs 500). Graph data structure validated with proper node types, color coding, and edge connections."
 
+  - task: "Enhanced JSON import functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented POST /api/import/json endpoint for importing user access data from JSON files. Includes risk analysis and data validation."
+
+  - task: "Resource-based search functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented GET /api/search/resource/{resource_name} endpoint for finding users who have access to specific resources."
+
+  - task: "Comprehensive analytics endpoint"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented GET /api/analytics endpoint providing comprehensive access analytics including risk distribution, top privileged users, and privilege escalation paths."
+
+  - task: "Data export functionality"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented GET /api/export/{format} endpoint supporting CSV, JSON, and XLSX export formats with filtering capabilities."
+
+  - task: "Individual user risk analysis"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "unknown"
+        agent: "main"
+        comment: "Implemented GET /api/risk-analysis/{user_email} endpoint providing detailed risk analysis for individual users including privilege escalation paths and recommendations."
+
 frontend:
   - task: "React frontend with cytoscape.js graph visualization"
     implemented: true
