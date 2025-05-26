@@ -72,6 +72,13 @@ class CloudProvider(str, Enum):
     AZURE = "azure"
     OKTA = "okta"
 
+# Provider Sample Data Models
+class ProviderSample(BaseModel):
+    provider: CloudProvider
+    sample_format: Dict[str, Any]
+    description: str
+    required_fields: List[str]
+
 class AccessType(str, Enum):
     READ = "read"
     WRITE = "write"
