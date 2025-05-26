@@ -112,7 +112,7 @@ const CloudAccessVisualizer = () => {
   ];
 
   const cytoscapeLayout = {
-    name: 'cose-bilkent',
+    name: graphLayout,
     quality: 'default',
     nodeDimensionsIncludeLabels: true,
     fit: true,
@@ -127,6 +127,80 @@ const CloudAccessVisualizer = () => {
     tile: false,
     animate: 'end',
     animationDuration: 1000
+  };
+
+  // Alternative layouts
+  const getLayoutConfig = (layoutName) => {
+    const layouts = {
+      'cose-bilkent': {
+        name: 'cose-bilkent',
+        quality: 'default',
+        nodeDimensionsIncludeLabels: true,
+        fit: true,
+        padding: 20,
+        randomize: false,
+        nodeRepulsion: 4500,
+        idealEdgeLength: 100,
+        edgeElasticity: 0.45,
+        nestingFactor: 0.1,
+        gravity: 0.25,
+        numIter: 2500,
+        tile: false,
+        animate: 'end',
+        animationDuration: 1000
+      },
+      'circle': {
+        name: 'circle',
+        fit: true,
+        padding: 30,
+        boundingBox: undefined,
+        avoidOverlap: true,
+        nodeDimensionsIncludeLabels: false,
+        spacingFactor: undefined,
+        radius: undefined,
+        startAngle: 3 / 2 * Math.PI,
+        sweep: undefined,
+        clockwise: true,
+        sort: undefined,
+        animate: true,
+        animationDuration: 500
+      },
+      'grid': {
+        name: 'grid',
+        fit: true,
+        padding: 30,
+        boundingBox: undefined,
+        avoidOverlap: true,
+        avoidOverlapPadding: 10,
+        nodeDimensionsIncludeLabels: false,
+        spacingFactor: undefined,
+        condense: false,
+        rows: undefined,
+        cols: undefined,
+        position: function(node) {},
+        sort: undefined,
+        animate: true,
+        animationDuration: 500
+      },
+      'breadthfirst': {
+        name: 'breadthfirst',
+        fit: true,
+        directed: false,
+        padding: 30,
+        circle: false,
+        grid: false,
+        spacingFactor: 1.75,
+        boundingBox: undefined,
+        avoidOverlap: true,
+        nodeDimensionsIncludeLabels: false,
+        roots: undefined,
+        maximal: false,
+        animate: true,
+        animationDuration: 500
+      }
+    };
+    
+    return layouts[layoutName] || layouts['cose-bilkent'];
   };
 
   // Fetch statistics on component mount
