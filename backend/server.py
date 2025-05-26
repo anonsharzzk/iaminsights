@@ -336,6 +336,9 @@ async def get_user_resources(user_email: str):
         
         user_access = UserAccess(**user_doc)
         return user_access.resources
+    except HTTPException:
+        # Re-raise HTTP exceptions (like 404) without modification
+        raise
     except Exception as e:
         logging.error(f"Error getting resources for user {user_email}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving user resources")
