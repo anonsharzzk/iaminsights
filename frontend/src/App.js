@@ -12,7 +12,7 @@ const App = () => {
   const [showLandingPage, setShowLandingPage] = useState(true);
 
   if (showLandingPage) {
-    return <LandingPage onGetStarted={() => setShowLandingPage(false)} />;
+    return <LandingPage onLoginClick={() => setShowLandingPage(false)} />;
   }
 
   return (
