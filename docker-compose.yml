@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: cloud-access-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: cloudaccess123
+      MONGO_INITDB_DATABASE: cloud_access
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    networks:
+      - cloud-access-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cloud-access-backend
+    restart: unless-stopped
+    environment:
+      - MONGO_URL=mongodb://admin:cloudaccess123@mongodb:27017/cloud_access?authSource=admin
+      - DB_NAME=cloud_access
+      - JWT_SECRET_KEY=your-super-secure-jwt-secret-key-change-in-production
+    ports:
+      - "8001:8001"
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+    networks:
+      - cloud-access-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cloud-access-frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_BACKEND_URL=http://localhost:8001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - cloud-access-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  cloud-access-network:
+    driver: bridge
