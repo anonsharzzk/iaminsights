@@ -1,0 +1,165 @@
+{
+  "metadata": {
+    "import_date": "2024-12-19T10:30:00Z",
+    "source": "aws_iam_audit",
+    "description": "AWS IAM access audit data - Sample for Cloud Access Visualizer",
+    "version": "1.0"
+  },
+  "users": [
+    {
+      "user_email": "john.doe@company.com",
+      "user_name": "John Doe",
+      "user_id": "AIDACKCEVSQ6C2EXAMPLE",
+      "department": "Engineering",
+      "job_title": "Senior DevOps Engineer",
+      "manager": "jane.smith@company.com",
+      "is_service_account": false,
+      "groups": ["developers", "devops-team", "aws-power-users"],
+      "roles": ["EC2-Admin", "S3-PowerUser", "Lambda-Developer"],
+      "resources": [
+        {
+          "provider": "aws",
+          "service": "S3",
+          "resource_type": "bucket",
+          "resource_name": "production-data-lake",
+          "resource_arn": "arn:aws:s3:::production-data-lake",
+          "access_type": "admin",
+          "permission_details": {
+            "actions": ["s3:*"],
+            "effect": "Allow",
+            "resource": "arn:aws:s3:::production-data-lake/*",
+            "policy_name": "S3-ProductionDataLake-FullAccess"
+          },
+          "description": "Full access to production data lake bucket",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-18T14:22:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "aws",
+          "service": "EC2",
+          "resource_type": "instance",
+          "resource_name": "prod-web-servers",
+          "resource_arn": "arn:aws:ec2:us-east-1:123456789012:instance/*",
+          "access_type": "admin",
+          "permission_details": {
+            "actions": ["ec2:*"],
+            "effect": "Allow",
+            "conditions": {
+              "StringEquals": {
+                "ec2:Region": "us-east-1"
+              }
+            },
+            "policy_name": "EC2-Production-FullAccess"
+          },
+          "description": "Full EC2 management in us-east-1 region",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-19T09:15:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "aws",
+          "service": "Lambda",
+          "resource_type": "function",
+          "resource_name": "api-gateway-functions",
+          "resource_arn": "arn:aws:lambda:us-east-1:123456789012:function:*",
+          "access_type": "write",
+          "permission_details": {
+            "actions": ["lambda:CreateFunction", "lambda:UpdateFunctionCode", "lambda:InvokeFunction"],
+            "effect": "Allow",
+            "resource": "arn:aws:lambda:us-east-1:123456789012:function:api-*",
+            "policy_name": "Lambda-API-Developer"
+          },
+          "description": "Deploy and manage API Lambda functions",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "medium",
+          "is_privileged": false,
+          "last_used": "2024-12-19T10:05:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "jane.smith@company.com",
+      "user_name": "Jane Smith",
+      "user_id": "AIDACKCEVSQ6C3EXAMPLE",
+      "department": "Security",
+      "job_title": "Cloud Security Analyst",
+      "manager": "security-lead@company.com",
+      "is_service_account": false,
+      "groups": ["security-team", "auditors", "compliance"],
+      "roles": ["SecurityAuditor", "ReadOnlyAdmin", "ComplianceReviewer"],
+      "resources": [
+        {
+          "provider": "aws",
+          "service": "IAM",
+          "resource_type": "policy",
+          "resource_name": "security-audit-access",
+          "resource_arn": "arn:aws:iam::123456789012:policy/security-audit-access",
+          "access_type": "read",
+          "permission_details": {
+            "actions": ["iam:Get*", "iam:List*", "iam:GenerateCredentialReport"],
+            "effect": "Allow",
+            "resource": "*",
+            "policy_name": "SecurityAuditor"
+          },
+          "description": "Read-only access to IAM for security auditing",
+          "account_id": "123456789012",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T07:20:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "aws",
+          "service": "CloudTrail",
+          "resource_type": "trail",
+          "resource_name": "organization-audit-trail",
+          "resource_arn": "arn:aws:cloudtrail:us-east-1:123456789012:trail/organization-audit-trail",
+          "access_type": "read",
+          "permission_details": {
+            "actions": ["cloudtrail:LookupEvents", "cloudtrail:GetTrail*", "cloudtrail:DescribeTrails"],
+            "effect": "Allow",
+            "resource": "arn:aws:cloudtrail:*:123456789012:trail/*",
+            "policy_name": "CloudTrail-Auditor"
+          },
+          "description": "Access to audit trail logs and events",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-18T15:45:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "aws",
+          "service": "GuardDuty",
+          "resource_type": "detector",
+          "resource_name": "threat-detection",
+          "resource_arn": "arn:aws:guardduty:us-east-1:123456789012:detector/*",
+          "access_type": "read",
+          "permission_details": {
+            "actions": ["guardduty:Get*", "guardduty:List*"],
+            "effect": "Allow",
+            "resource": "*",
+            "policy_name": "GuardDuty-Reader"
+          },
+          "description": "Read access to GuardDuty findings and detectors",
+          "region": "us-east-1",
+          "account_id": "123456789012",
+          "risk_level": "low",
+          "is_privileged": false,
+          "last_used": "2024-12-19T08:10:00Z",
+          "mfa_required": true
+        }
+      ]
+    }
+  ]
+}

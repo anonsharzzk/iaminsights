@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "import_date": "2024-12-19T10:30:00Z",
+    "source": "gcp_iam_audit",
+    "description": "Google Cloud Platform IAM access audit data - Sample for Cloud Access Visualizer",
+    "version": "1.0"
+  },
+  "users": [
+    {
+      "user_email": "sarah.wilson@company.com",
+      "user_name": "Sarah Wilson",
+      "user_id": "104567890123456789012",
+      "department": "Data Engineering",
+      "job_title": "Senior Data Engineer",
+      "manager": "data-lead@company.com",
+      "is_service_account": false,
+      "groups": ["data-engineers", "gcp-users", "analytics-team"],
+      "roles": ["BigQuery Data Editor", "Compute Instance Admin", "Storage Object Admin"],
+      "resources": [
+        {
+          "provider": "gcp",
+          "service": "BigQuery",
+          "resource_type": "dataset",
+          "resource_name": "analytics-production",
+          "access_type": "write",
+          "permission_details": {
+            "role": "roles/bigquery.dataEditor",
+            "resource": "projects/company-analytics/datasets/analytics-production",
+            "bindings": ["bigquery.datasets.get", "bigquery.tables.create", "bigquery.tables.update"]
+          },
+          "description": "Edit access to production analytics dataset",
+          "region": "us-central1",
+          "account_id": "company-analytics",
+          "risk_level": "medium",
+          "is_privileged": true,
+          "last_used": "2024-12-19T09:30:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "gcp",
+          "service": "Compute Engine",
+          "resource_type": "instance",
+          "resource_name": "data-processing-cluster",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "roles/compute.instanceAdmin.v1",
+            "resource": "projects/company-analytics/zones/us-central1-a/instances/data-processing-*",
+            "bindings": ["compute.instances.*"]
+          },
+          "description": "Full admin access to data processing compute instances",
+          "region": "us-central1",
+          "account_id": "company-analytics",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-18T16:45:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "gcp",
+          "service": "Cloud Storage",
+          "resource_type": "bucket",
+          "resource_name": "ml-models-storage",
+          "access_type": "write",
+          "permission_details": {
+            "role": "roles/storage.objectAdmin",
+            "resource": "projects/company-analytics/buckets/ml-models-storage",
+            "bindings": ["storage.objects.create", "storage.objects.delete", "storage.objects.get"]
+          },
+          "description": "Manage ML models in cloud storage",
+          "region": "us-central1",
+          "account_id": "company-analytics",
+          "risk_level": "medium",
+          "is_privileged": false,
+          "last_used": "2024-12-19T11:20:00Z",
+          "mfa_required": true
+        }
+      ]
+    },
+    {
+      "user_email": "mike.johnson@company.com",
+      "user_name": "Mike Johnson",
+      "user_id": "105678901234567890123",
+      "department": "Infrastructure",
+      "job_title": "Cloud Platform Engineer",
+      "manager": "infra-lead@company.com",
+      "is_service_account": false,
+      "groups": ["platform-engineers", "gcp-admins", "kubernetes-team"],
+      "roles": ["GKE Cluster Admin", "Network Admin", "Service Account Admin"],
+      "resources": [
+        {
+          "provider": "gcp",
+          "service": "GKE",
+          "resource_type": "cluster",
+          "resource_name": "production-k8s-cluster",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "roles/container.clusterAdmin",
+            "resource": "projects/company-production/locations/us-central1/clusters/production-k8s-cluster",
+            "bindings": ["container.clusters.*", "container.operations.*"]
+          },
+          "description": "Full administrative access to production Kubernetes cluster",
+          "region": "us-central1",
+          "account_id": "company-production",
+          "risk_level": "critical",
+          "is_privileged": true,
+          "last_used": "2024-12-19T08:15:00Z",
+          "mfa_required": true
+        },
+        {
+          "provider": "gcp",
+          "service": "Networking",
+          "resource_type": "vpc",
+          "resource_name": "production-vpc",
+          "access_type": "admin",
+          "permission_details": {
+            "role": "roles/compute.networkAdmin",
+            "resource": "projects/company-production/global/networks/production-vpc",
+            "bindings": ["compute.networks.*", "compute.firewalls.*", "compute.routes.*"]
+          },
+          "description": "Network administration for production VPC",
+          "region": "global",
+          "account_id": "company-production",
+          "risk_level": "high",
+          "is_privileged": true,
+          "last_used": "2024-12-18T14:30:00Z",
+          "mfa_required": true
+        }
+      ]
+    }
+  ]
+}
