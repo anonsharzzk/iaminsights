@@ -2,7 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import axios from "axios";
 import CytoscapeComponent from "react-cytoscapejs";
-import { Search, Users, Shield, BarChart3, Cloud, Server, Database, Key } from "lucide-react";
+import cytoscape from "cytoscape";
+import coseBilkent from "cytoscape-cose-bilkent";
+import { Search, Users, Shield, BarChart3, Cloud, Server, Database, Key, Download, RefreshCw, Filter, Eye, Settings } from "lucide-react";
+
+// Register the layout extension
+cytoscape.use(coseBilkent);
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
