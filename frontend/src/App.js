@@ -283,6 +283,12 @@ const CloudAccessVisualizer = () => {
     }
   };
 
+  // Fetch statistics on component mount
+  useEffect(() => {
+    fetchStatistics();
+    fetchAllUsers();
+  }, []);
+
   const fetchStatistics = async () => {
     try {
       const response = await axios.get(`${API}/providers`);
