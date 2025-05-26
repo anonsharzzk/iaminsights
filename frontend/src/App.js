@@ -14,8 +14,12 @@ const API = `${BACKEND_URL}/api`;
 
 const CloudAccessVisualizer = () => {
   const [searchEmail, setSearchEmail] = useState("");
+  const [searchResource, setSearchResource] = useState("");
+  const [searchType, setSearchType] = useState("user"); // user, resource
   const [graphData, setGraphData] = useState({ nodes: [], edges: [] });
   const [userInfo, setUserInfo] = useState(null);
+  const [resourceResults, setResourceResults] = useState([]);
+  const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statistics, setStatistics] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
@@ -24,6 +28,9 @@ const CloudAccessVisualizer = () => {
   const [showLegend, setShowLegend] = useState(true);
   const [graphLayout, setGraphLayout] = useState("cose-bilkent");
   const [selectedNode, setSelectedNode] = useState(null);
+  const [activeTab, setActiveTab] = useState("search"); // search, import, analytics, export
+  const [importFile, setImportFile] = useState(null);
+  const [importResult, setImportResult] = useState(null);
   const cyRef = useRef();
 
   // Cytoscape layout and styling
