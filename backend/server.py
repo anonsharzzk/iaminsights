@@ -1074,7 +1074,7 @@ async def search_user_access(
         raise HTTPException(status_code=500, detail=f"Error searching user access: {str(e)}")
 
 @api_router.get("/users", response_model=List[UserAccess])
-async def get_all_users():
+async def get_all_users(current_user: User = Depends(get_current_user)):
     """Get all users in the system"""
     try:
         users = await db.user_access.find().to_list(1000)
@@ -1084,7 +1084,10 @@ async def get_all_users():
         raise HTTPException(status_code=500, detail="Error retrieving users")
 
 @api_router.get("/users/{user_email}/resources", response_model=List[CloudResource])
-async def get_user_resources(user_email: str):
+async def get_user_resources(
+    user_email: str,
+    current_user: User = Depends(get_current_user)
+):
     """Get all resources for a specific user"""
     try:
         user_doc = await db.user_access.find_one({"user_email": user_email})
@@ -1101,7 +1104,7 @@ async def get_user_resources(user_email: str):
         raise HTTPException(status_code=500, detail="Error retrieving user resources")
 
 @api_router.get("/providers", response_model=Dict[str, Any])
-async def get_provider_statistics():
+async def get_provider_statistics(current_user: User = Depends(get_current_user)):
     """Get statistics about all cloud providers"""
     try:
         users = await db.user_access.find().to_list(1000)
