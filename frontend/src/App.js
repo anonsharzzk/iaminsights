@@ -203,11 +203,85 @@ const CloudAccessVisualizer = () => {
     return layouts[layoutName] || layouts['cose-bilkent'];
   };
 
-  // Fetch statistics on component mount
-  useEffect(() => {
-    fetchStatistics();
-    fetchAllUsers();
-  }, []);
+  // Filter graph data based on selected filters
+  const getFilteredGraphData = () => {
+    if (!userInfo) return { nodes: [], edges: [] };
+
+    let filteredNodes = [...graphData.nodes];
+    let filteredEdges = [...graphData.edges];
+
+    // Filter by provider
+    if (selectedProvider !== "all") {
+      const allowedNodeIds = new Set();
+      
+      // Always include user node
+      const userNode = filteredNodes.find(node => node.data.type === "user");
+      if (userNode) allowedNodeIds.add(userNode.data.id);
+      
+      // Include selected provider and its children
+      filteredNodes.forEach(node => {
+        const data = node.data;
+        if (data.provider === selectedProvider || data.type === "user") {
+          allowedNodeIds.add(data.id);
+        }
+      });
+      
+      filteredNodes = filteredNodes.filter(node => allowedNodeIds.has(node.data.id));
+      filteredEdges = filteredEdges.filter(edge => 
+        allowedNodeIds.has(edge.data.source) && allowedNodeIds.has(edge.data.target)
+      );
+    }
+
+    // Filter by access type
+    if (selectedAccessType !== "all") {
+      const allowedNodeIds = new Set();
+      
+      // Always include user, provider, and service nodes
+      filteredNodes.forEach(node => {
+        const data = node.data;
+        if (data.type === "user" || data.type === "provider" || data.type === "service") {
+          allowedNodeIds.add(data.id);
+        } else if (data.type === "resource" && data.access_type === selectedAccessType) {
+          allowedNodeIds.add(data.id);
+        }
+      });
+      
+      filteredNodes = filteredNodes.filter(node => allowedNodeIds.has(node.data.id));
+      filteredEdges = filteredEdges.filter(edge => 
+        allowedNodeIds.has(edge.data.source) && allowedNodeIds.has(edge.data.target)
+      );
+    }
+
+    return { nodes: filteredNodes, edges: filteredEdges };
+  };
+
+  // Export graph as PNG
+  const exportGraphPNG = () => {
+    if (cyRef.current) {
+      const png64 = cyRef.current.png();
+      const link = document.createElement('a');
+      link.download = `cloud-access-${searchEmail}-${Date.now()}.png`;
+      link.href = png64;
+      link.click();
+    }
+  };
+
+  // Reset graph view
+  const resetGraphView = () => {
+    if (cyRef.current) {
+      cyRef.current.fit();
+      cyRef.current.center();
+    }
+  };
+
+  // Change graph layout
+  const changeLayout = (layoutName) => {
+    setGraphLayout(layoutName);
+    if (cyRef.current) {
+      const layout = cyRef.current.layout(getLayoutConfig(layoutName));
+      layout.run();
+    }
+  };
 
   const fetchStatistics = async () => {
     try {
