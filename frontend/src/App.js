@@ -440,50 +440,7 @@ const CloudAccessVisualizer = () => {
     }
   };
 
-  const handleSearch = async () => {
-    if (!searchEmail.trim()) return;
-    
-    setLoading(true);
-    try {
-      const response = await axios.get(`${API}/search/${encodeURIComponent(searchEmail)}`);
-      const data = response.data;
-      
-      if (data.user) {
-        setUserInfo(data.user);
-        // Transform the graph data for cytoscape
-        const nodes = data.graph_data.nodes.map(node => ({
-          data: { 
-            id: node.id, 
-            label: node.label, 
-            type: node.type,
-            provider: node.provider,
-            access_type: node.access_type,
-            color: node.color 
-          }
-        }));
-        
-        const edges = data.graph_data.edges.map(edge => ({
-          data: { 
-            id: edge.id, 
-            source: edge.source, 
-            target: edge.target, 
-            label: edge.label 
-          }
-        }));
-        
-        setGraphData({ nodes, edges });
-      } else {
-        setUserInfo(null);
-        setGraphData({ nodes: [], edges: [] });
-        alert("User not found in the system");
-      }
-    } catch (error) {
-      console.error("Error searching user:", error);
-      alert("Error searching for user access data");
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
