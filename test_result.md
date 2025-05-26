@@ -167,15 +167,18 @@ backend:
 
   - task: "Resource-based search functionality"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "unknown"
         agent: "main"
         comment: "Implemented GET /api/search/resource/{resource_name} endpoint for finding users who have access to specific resources."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTED: Resource search functionality working correctly. Tested searches for 'production', 'S3', and 'admin' resources. Returns proper structure with resource details, users_with_access, total_users, and risk_summary. Validates response format and risk distribution levels."
 
   - task: "Comprehensive analytics endpoint"
     implemented: true
