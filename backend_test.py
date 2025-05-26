@@ -341,8 +341,8 @@ class BackendTester:
     def test_risk_analysis_endpoint(self):
         """Test 7: Individual User Risk Analysis - GET /api/risk-analysis/{user_email}"""
         try:
-            # Test with existing users
-            test_users = ["alice@company.com", "david.wilson@company.com"]  # Include imported user
+            # Test with existing users (use the actual users in database)
+            test_users = self.sample_users[:2]  # Use first 2 users from sample_users
             
             for user_email in test_users:
                 response = requests.get(f"{self.base_url}/risk-analysis/{user_email}", timeout=10)
