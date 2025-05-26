@@ -1042,10 +1042,13 @@ async def get_provider_sample(
 # Protected Cloud Access Data Endpoints (All require authentication)
 @api_router.get("/")
 async def root():
-    return {"message": "Cloud Access Visualization API", "version": "1.0.0"}
+    return {"message": "Cloud Access Visualization API", "version": "3.0.0"}
 
 @api_router.get("/search/{user_email}", response_model=SearchResponse)
-async def search_user_access(user_email: str):
+async def search_user_access(
+    user_email: str,
+    current_user: User = Depends(get_current_user)
+):
     """Search for user access across all cloud providers"""
     try:
         # Find user in database
