@@ -294,6 +294,7 @@ const CloudAccessVisualizer = () => {
   useEffect(() => {
     fetchStatistics();
     fetchAllUsers();
+    fetchAnalytics();
   }, []);
 
   const fetchStatistics = async () => {
@@ -311,6 +312,131 @@ const CloudAccessVisualizer = () => {
       setAllUsers(response.data);
     } catch (error) {
       console.error("Error fetching users:", error);
+    }
+  };
+
+  const fetchAnalytics = async () => {
+    try {
+      const response = await axios.get(`${API}/analytics`);
+      setAnalytics(response.data);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+    }
+  };
+
+  const handleSearch = async () => {
+    if (searchType === "user") {
+      await handleUserSearch();
+    } else {
+      await handleResourceSearch();
+    }
+  };
+
+  const handleUserSearch = async () => {
+    if (!searchEmail.trim()) return;
+    
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/search/${encodeURIComponent(searchEmail)}`);
+      const data = response.data;
+      
+      if (data.user) {
+        setUserInfo(data.user);
+        setResourceResults([]);
+        // Transform the graph data for cytoscape
+        const nodes = data.graph_data.nodes.map(node => ({
+          data: { 
+            id: node.id, 
+            label: node.label, 
+            type: node.type,
+            provider: node.provider,
+            access_type: node.access_type,
+            color: node.color 
+          }
+        }));
+        
+        const edges = data.graph_data.edges.map(edge => ({
+          data: { 
+            id: edge.id, 
+            source: edge.source, 
+            target: edge.target, 
+            label: edge.label 
+          }
+        }));
+        
+        setGraphData({ nodes, edges });
+      } else {
+        setUserInfo(null);
+        setGraphData({ nodes: [], edges: [] });
+        alert("User not found in the system");
+      }
+    } catch (error) {
+      console.error("Error searching user:", error);
+      alert("Error searching for user access data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResourceSearch = async () => {
+    if (!searchResource.trim()) return;
+    
+    setLoading(true);
+    try {
+      const response = await axios.get(`${API}/search/resource/${encodeURIComponent(searchResource)}`);
+      setResourceResults(response.data);
+      setUserInfo(null);
+      setGraphData({ nodes: [], edges: [] });
+    } catch (error) {
+      console.error("Error searching resource:", error);
+      alert("Error searching for resource access data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileImport = async () => {
+    if (!importFile) return;
+    
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      
+      const response = await axios.post(`${API}/import/json`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      setImportResult(response.data);
+      setImportFile(null);
+      
+      // Refresh data
+      await fetchAllUsers();
+      await fetchStatistics();
+      await fetchAnalytics();
+      
+      alert(`Successfully imported ${response.data.imported_users} users!`);
+    } catch (error) {
+      console.error("Error importing file:", error);
+      alert("Error importing file: " + (error.response?.data?.detail || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async (format) => {
+    try {
+      const params = new URLSearchParams();
+      if (selectedProvider !== "all") params.append('provider', selectedProvider);
+      if (selectedAccessType !== "all") params.append('access_type', selectedAccessType);
+      
+      const url = `${API}/export/${format}?${params.toString()}`;
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      alert("Error exporting data");
     }
   };
 
