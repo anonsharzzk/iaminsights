@@ -472,6 +472,279 @@ async def get_provider_statistics():
         logging.error(f"Error getting provider statistics: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving statistics")
 
+# Enhanced API Endpoints
+
+@api_router.post("/import/json")
+async def import_json_data(file: UploadFile = File(...)):
+    """Import user access data from JSON file"""
+    try:
+        if not file.filename.endswith('.json'):
+            raise HTTPException(status_code=400, detail="File must be a JSON file")
+        
+        content = await file.read()
+        json_data = json.loads(content.decode('utf-8'))
+        
+        result = await process_json_import(json_data)
+        return result
+    
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON format")
+    except Exception as e:
+        logging.error(f"Error importing JSON data: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error importing data: {str(e)}")
+
+@api_router.get("/search/resource/{resource_name}", response_model=List[ResourceSearchResult])
+async def search_by_resource(resource_name: str):
+    """Search for users who have access to a specific resource"""
+    try:
+        users = await db.user_access.find().to_list(1000)
+        results = []
+        
+        for user_doc in users:
+            user_access = UserAccess(**user_doc)
+            matching_resources = [
+                resource for resource in user_access.resources
+                if resource_name.lower() in resource.resource_name.lower()
+            ]
+            
+            if matching_resources:
+                for resource in matching_resources:
+                    # Count total users with access to this resource
+                    total_users = 0
+                    risk_summary = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+                    
+                    for other_user_doc in users:
+                        other_user = UserAccess(**other_user_doc)
+                        if any(r.resource_name == resource.resource_name for r in other_user.resources):
+                            total_users += 1
+                            risk_level = resource.risk_level or "low"
+                            risk_summary[risk_level] += 1
+                    
+                    results.append(ResourceSearchResult(
+                        resource=resource,
+                        users_with_access=[user_access.user_email],
+                        total_users=total_users,
+                        risk_summary=risk_summary
+                    ))
+        
+        return results
+    
+    except Exception as e:
+        logging.error(f"Error searching by resource {resource_name}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error searching by resource")
+
+@api_router.get("/analytics", response_model=AccessAnalytics)
+async def get_access_analytics():
+    """Get comprehensive access analytics and insights"""
+    try:
+        users = await db.user_access.find().to_list(1000)
+        user_objects = [UserAccess(**user) for user in users]
+        
+        # Calculate analytics
+        total_users = len(user_objects)
+        total_resources = sum(len(user.resources) for user in user_objects)
+        
+        # Risk distribution
+        risk_distribution = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+        cross_provider_admins = 0
+        unused_privileges_count = 0
+        privilege_escalation_risks = []
+        
+        # Top privileged users
+        top_privileged_users = []
+        
+        for user in user_objects:
+            # Analyze user and calculate risk
+            analyzed_user = analyze_user_access(user)
+            
+            # Update risk distribution
+            if analyzed_user.overall_risk_score < 25:
+                risk_distribution["low"] += 1
+            elif analyzed_user.overall_risk_score < 50:
+                risk_distribution["medium"] += 1
+            elif analyzed_user.overall_risk_score < 75:
+                risk_distribution["high"] += 1
+            else:
+                risk_distribution["critical"] += 1
+            
+            # Count cross-provider admins
+            if analyzed_user.cross_provider_admin:
+                cross_provider_admins += 1
+            
+            # Count unused privileges
+            unused_privileges_count += len(analyzed_user.unused_privileges)
+            
+            # Collect privilege escalation risks
+            privilege_escalation_risks.extend(analyzed_user.privilege_escalation_paths)
+            
+            # Add to top privileged users
+            admin_count = sum(1 for r in user.resources if r.access_type == AccessType.ADMIN)
+            if admin_count > 0:
+                top_privileged_users.append({
+                    "user_email": user.user_email,
+                    "user_name": user.user_name,
+                    "admin_access_count": admin_count,
+                    "total_resources": len(user.resources),
+                    "risk_score": analyzed_user.overall_risk_score,
+                    "is_service_account": user.is_service_account
+                })
+        
+        # Sort top privileged users by risk score
+        top_privileged_users.sort(key=lambda x: x["risk_score"], reverse=True)
+        top_privileged_users = top_privileged_users[:10]  # Top 10
+        
+        # Provider statistics
+        provider_stats = {}
+        for provider in ["aws", "gcp", "azure", "okta"]:
+            users_with_provider = sum(
+                1 for user in user_objects
+                if any(r.provider == provider for r in user.resources)
+            )
+            resources_in_provider = sum(
+                len([r for r in user.resources if r.provider == provider])
+                for user in user_objects
+            )
+            provider_stats[provider] = {
+                "users": users_with_provider,
+                "resources": resources_in_provider
+            }
+        
+        return AccessAnalytics(
+            total_users=total_users,
+            total_resources=total_resources,
+            risk_distribution=risk_distribution,
+            top_privileged_users=top_privileged_users,
+            unused_privileges_count=unused_privileges_count,
+            cross_provider_admins=cross_provider_admins,
+            privilege_escalation_risks=privilege_escalation_risks,
+            provider_stats=provider_stats
+        )
+    
+    except Exception as e:
+        logging.error(f"Error getting analytics: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving analytics")
+
+@api_router.get("/export/{format}")
+async def export_data(
+    format: str,
+    provider: Optional[str] = Query(None),
+    access_type: Optional[str] = Query(None),
+    risk_level: Optional[str] = Query(None)
+):
+    """Export access data in various formats (CSV, XLSX, JSON)"""
+    try:
+        if format not in ["csv", "xlsx", "json"]:
+            raise HTTPException(status_code=400, detail="Format must be csv, xlsx, or json")
+        
+        # Get all users
+        users = await db.user_access.find().to_list(1000)
+        user_objects = [UserAccess(**user) for user in users]
+        
+        # Apply filters
+        filtered_data = []
+        for user in user_objects:
+            analyzed_user = analyze_user_access(user)
+            for resource in user.resources:
+                if provider and resource.provider != provider:
+                    continue
+                if access_type and resource.access_type != access_type:
+                    continue
+                if risk_level and resource.risk_level != risk_level:
+                    continue
+                
+                filtered_data.append({
+                    "user_email": user.user_email,
+                    "user_name": user.user_name,
+                    "department": user.department,
+                    "job_title": user.job_title,
+                    "is_service_account": user.is_service_account,
+                    "provider": resource.provider,
+                    "service": resource.service,
+                    "resource_type": resource.resource_type,
+                    "resource_name": resource.resource_name,
+                    "access_type": resource.access_type,
+                    "risk_level": resource.risk_level,
+                    "is_privileged": resource.is_privileged,
+                    "last_used": resource.last_used,
+                    "mfa_required": resource.mfa_required,
+                    "user_risk_score": analyzed_user.overall_risk_score,
+                    "cross_provider_admin": analyzed_user.cross_provider_admin
+                })
+        
+        if format == "json":
+            output = json.dumps(filtered_data, default=str, indent=2)
+            media_type = "application/json"
+            filename = f"cloud_access_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
+        
+        elif format == "csv":
+            output = io.StringIO()
+            if filtered_data:
+                writer = csv.DictWriter(output, fieldnames=filtered_data[0].keys())
+                writer.writeheader()
+                writer.writerows(filtered_data)
+            output = output.getvalue()
+            media_type = "text/csv"
+            filename = f"cloud_access_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.csv"
+        
+        elif format == "xlsx":
+            df = pd.DataFrame(filtered_data)
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Cloud Access Report')
+            output = output.getvalue()
+            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            filename = f"cloud_access_export_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        
+        return StreamingResponse(
+            io.BytesIO(output) if format == "xlsx" else io.StringIO(output),
+            media_type=media_type,
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    
+    except Exception as e:
+        logging.error(f"Error exporting data: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error exporting data")
+
+@api_router.get("/risk-analysis/{user_email}")
+async def get_user_risk_analysis(user_email: str):
+    """Get detailed risk analysis for a specific user"""
+    try:
+        user_doc = await db.user_access.find_one({"user_email": user_email})
+        if not user_doc:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_access = UserAccess(**user_doc)
+        analyzed_user = analyze_user_access(user_access)
+        
+        return {
+            "user_email": user_email,
+            "overall_risk_score": analyzed_user.overall_risk_score,
+            "risk_level": (
+                "critical" if analyzed_user.overall_risk_score >= 75 else
+                "high" if analyzed_user.overall_risk_score >= 50 else
+                "medium" if analyzed_user.overall_risk_score >= 25 else
+                "low"
+            ),
+            "cross_provider_admin": analyzed_user.cross_provider_admin,
+            "privilege_escalation_paths": analyzed_user.privilege_escalation_paths,
+            "unused_privileges": analyzed_user.unused_privileges,
+            "admin_access_count": sum(1 for r in user_access.resources if r.access_type == AccessType.ADMIN),
+            "privileged_access_count": sum(1 for r in user_access.resources if r.is_privileged),
+            "providers_with_access": list(set(r.provider for r in user_access.resources)),
+            "recommendations": [
+                "Enable MFA on all privileged accounts" if any(not r.mfa_required and r.is_privileged for r in user_access.resources) else None,
+                "Review unused privileges" if analyzed_user.unused_privileges else None,
+                "Audit cross-provider admin access" if analyzed_user.cross_provider_admin else None,
+                "Implement privilege escalation monitoring" if analyzed_user.privilege_escalation_paths else None
+            ]
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error getting risk analysis for user {user_email}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving risk analysis")
+
 # Include the router in the main app
 app.include_router(api_router)
 
