@@ -18,7 +18,7 @@ class BackendTester:
     def __init__(self):
         self.base_url = BACKEND_URL
         self.test_results = []
-        self.sample_users = ["alice@company.com", "bob@company.com", "carol@company.com"]
+        self.sample_users = ["david.wilson@company.com", "emma.clark@company.com", "automation-service@company.com"]
         
     def log_test(self, test_name: str, passed: bool, details: str = ""):
         """Log test results"""
