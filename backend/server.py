@@ -1,4 +1,5 @@
-from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Query
+from fastapi import FastAPI, APIRouter, HTTPException, UploadFile, File, Query, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -9,12 +10,15 @@ import json
 import io
 import csv
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Dict, Any, Optional
 import pandas as pd
 import uuid
+import jwt
+import bcrypt
+from jose import JWTError
 
 # Import enhanced models inline
 
