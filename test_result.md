@@ -260,7 +260,7 @@ current_focus:
   - "Session Persistence Testing"
 
 stuck_tasks:
-  - "Session Persistence Testing"
+  - ""
 
 test_all: true
 test_priority: "high_first"
