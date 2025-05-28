@@ -438,14 +438,25 @@ async def init_default_admin():
     """Initialize default admin user if no users exist"""
     user_count = await db.users.count_documents({})
     if user_count == 0:
-        default_admin = User(
+        # Create primary admin user
+        primary_admin = User(
+            email="self@iamsharn.com",
+            hashed_password=hash_password("Testing@123"),
+            role=UserRole.ADMIN,
+            created_at=datetime.utcnow()
+        )
+        await db.users.insert_one(primary_admin.dict())
+        logging.info("Primary admin user created: self@iamsharn.com")
+        
+        # Create secondary admin user for backward compatibility
+        secondary_admin = User(
             email="adminn@iamsharan.com",
             hashed_password=hash_password("Testing@123"),
             role=UserRole.ADMIN,
             created_at=datetime.utcnow()
         )
-        await db.users.insert_one(default_admin.dict())
-        logging.info("Default admin user created: adminn@iamsharan.com")
+        await db.users.insert_one(secondary_admin.dict())
+        logging.info("Secondary admin user created: adminn@iamsharan.com")
 
 # Risk Analysis Functions
 def calculate_risk_score(user_access: UserAccess) -> float:
