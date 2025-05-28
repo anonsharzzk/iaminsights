@@ -28,6 +28,10 @@ const EnhancedAnalytics = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   
+  // Provider analytics state
+  const [providerAnalytics, setProviderAnalytics] = useState({});
+  const [selectedProviderDashboard, setSelectedProviderDashboard] = useState("aws");
+
   // Overview analytics state
   const [overviewStats, setOverviewStats] = useState({
     total_users: 0,
