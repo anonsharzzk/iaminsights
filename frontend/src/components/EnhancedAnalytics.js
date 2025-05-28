@@ -28,9 +28,66 @@ const EnhancedAnalytics = () => {
   const [sortOrder, setSortOrder] = useState("desc");
   const [currentPage, setCurrentPage] = useState(1);
   
-  // Provider analytics state
-  const [providerAnalytics, setProviderAnalytics] = useState({});
-  const [selectedProviderDashboard, setSelectedProviderDashboard] = useState("aws");
+  // Overview analytics state
+  const [overviewStats, setOverviewStats] = useState({
+    total_users: 0,
+    cross_provider_admins: 0,
+    escalation_risks: 0,
+    high_risk_users: 0,
+    risk_distribution: { critical: 0, high: 0, medium: 0, low: 0 },
+    provider_distribution: { aws: 0, gcp: 0, azure: 0, okta: 0 }
+  });
+
+  // Fetch overview statistics
+  const fetchOverviewStats = async () => {
+    if (!isAuthenticated) {
+      console.error("User not authenticated");
+      return;
+    }
+    
+    try {
+      // Fetch users to calculate overview stats
+      const response = await axios.get(`${API}/users/paginated?page=1&page_size=1000`);
+      const allUsers = response.data.users;
+      
+      const stats = {
+        total_users: allUsers.length,
+        cross_provider_admins: allUsers.filter(u => u.cross_provider_admin).length,
+        escalation_risks: allUsers.filter(u => u.privilege_escalation_count > 0).length,
+        high_risk_users: allUsers.filter(u => u.risk_level === 'high' || u.risk_level === 'critical').length,
+        risk_distribution: {
+          critical: allUsers.filter(u => u.risk_level === 'critical').length,
+          high: allUsers.filter(u => u.risk_level === 'high').length,
+          medium: allUsers.filter(u => u.risk_level === 'medium').length,
+          low: allUsers.filter(u => u.risk_level === 'low').length,
+        },
+        provider_distribution: {
+          aws: allUsers.filter(u => u.providers.includes('aws')).length,
+          gcp: allUsers.filter(u => u.providers.includes('gcp')).length,
+          azure: allUsers.filter(u => u.providers.includes('azure')).length,
+          okta: allUsers.filter(u => u.providers.includes('okta')).length,
+        }
+      };
+      
+      setOverviewStats(stats);
+      
+      // Also set a subset for the main users display
+      setUsers(allUsers.slice(0, 20));
+      setPagination({
+        page: 1,
+        page_size: 20,
+        total_users: allUsers.length,
+        total_pages: Math.ceil(allUsers.length / 20),
+        has_next: allUsers.length > 20,
+        has_prev: false
+      });
+    } catch (error) {
+      console.error("Error fetching overview stats:", error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error("Authentication error - token may be invalid");
+      }
+    }
+  };
   
   // Risk analysis state
   const [selectedUserRisk, setSelectedUserRisk] = useState(null);
