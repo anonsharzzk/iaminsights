@@ -694,6 +694,7 @@ const CloudAccessVisualizer = () => {
                         className="bg-slate-700 text-white text-sm rounded px-3 py-1 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="cose-bilkent">Smart Layout</option>
+                        <option value="concentric">Concentric</option>
                         <option value="circle">Circle</option>
                         <option value="grid">Grid</option>
                         <option value="breadthfirst">Hierarchy</option>
