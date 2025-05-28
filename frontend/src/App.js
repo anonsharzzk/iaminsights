@@ -191,7 +191,7 @@ const App = () => {
   );
 };
 
-const AppContent = ({ showLogin, onBackToLanding }) => {
+const AppContent = ({ showLogin, onBackToLanding, onShowSignup }) => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -206,7 +206,7 @@ const AppContent = ({ showLogin, onBackToLanding }) => {
   }
 
   if (!isAuthenticated) {
-    return <LoginPage onBack={onBackToLanding} />;
+    return <LoginPage onBack={onBackToLanding} onShowSignup={onShowSignup} />;
   }
 
   return <AuthenticatedApp />;
