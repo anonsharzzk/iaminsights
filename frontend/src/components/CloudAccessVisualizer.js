@@ -988,78 +988,8 @@ const CloudAccessVisualizer = () => {
       )}
 
       {/* Analytics Tab */}
-      {activeTab === 'analytics' && analytics && (
-        <div className="space-y-6">
-          <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-            <h3 className="text-2xl font-bold text-white mb-6 flex items-center">
-              <BarChart3 className="w-6 h-6 mr-3" />
-              Security Analytics
-            </h3>
-            
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{analytics.total_users}</p>
-                <p className="text-slate-300 text-sm">Total Users</p>
-              </div>
-              <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                <Database className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{analytics.total_resources}</p>
-                <p className="text-slate-300 text-sm">Total Resources</p>
-              </div>
-              <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                <Shield className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{analytics.cross_provider_admins}</p>
-                <p className="text-slate-300 text-sm">Cross-Provider Admins</p>
-              </div>
-              <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{analytics.privilege_escalation_risks.length}</p>
-                <p className="text-slate-300 text-sm">Escalation Risks</p>
-              </div>
-            </div>
-
-            {/* Risk Distribution */}
-            <div className="mb-8">
-              <h4 className="text-lg font-semibold text-white mb-4">Risk Distribution</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(analytics.risk_distribution).map(([level, count]) => (
-                  <div key={level} className={`p-4 rounded-lg ${
-                    level === 'low' ? 'bg-green-500/20 border border-green-500/30' :
-                    level === 'medium' ? 'bg-yellow-500/20 border border-yellow-500/30' :
-                    level === 'high' ? 'bg-orange-500/20 border border-orange-500/30' :
-                    'bg-red-500/20 border border-red-500/30'
-                  }`}>
-                    <p className="text-2xl font-bold text-white">{count}</p>
-                    <p className="text-slate-300 text-sm capitalize">{level} Risk</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Top Privileged Users */}
-            <div>
-              <h4 className="text-lg font-semibold text-white mb-4">Top Privileged Users</h4>
-              <div className="space-y-3">
-                {analytics.top_privileged_users.slice(0, 5).map((user, index) => (
-                  <div key={index} className="bg-slate-700/30 rounded-lg p-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-white font-medium">{user.user_email}</p>
-                      <p className="text-slate-400 text-sm">
-                        {user.admin_access_count} admin access • {user.total_resources} total resources
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-white font-bold">{user.risk_score.toFixed(1)}</p>
-                      <p className="text-slate-400 text-xs">Risk Score</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      {activeTab === 'analytics' && (
+        <EnhancedAnalytics />
       )}
 
       {/* Export Tab */}
