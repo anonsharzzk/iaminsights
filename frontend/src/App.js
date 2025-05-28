@@ -3,6 +3,7 @@ import "./App.css";
 import { AuthProvider, useAuth } from "./components/AuthContext";
 import LandingPage from "./components/LandingPage";
 import LoginPage from "./components/LoginPage";
+import SignupPage from "./components/SignupPage";
 import UserManagement from "./components/UserManagement";
 import SettingsPage from "./components/SettingsPage";
 import CloudAccessVisualizer from "./components/CloudAccessVisualizer";
