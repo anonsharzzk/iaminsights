@@ -135,19 +135,49 @@ const AuthenticatedApp = () => {
 const App = () => {
   const [showLandingPage, setShowLandingPage] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
+  const [showSignup, setShowSignup] = useState(false);
 
   const handleLoginClick = () => {
     setShowLandingPage(false);
     setShowLogin(true);
+    setShowSignup(false);
+  };
+
+  const handleSignupClick = () => {
+    setShowLandingPage(false);
+    setShowLogin(false);
+    setShowSignup(true);
   };
 
   const handleBackToLanding = () => {
     setShowLogin(false);
+    setShowSignup(false);
     setShowLandingPage(true);
+  };
+
+  const handleBackToLogin = () => {
+    setShowSignup(false);
+    setShowLogin(true);
+  };
+
+  const handleSignupSuccess = (userData) => {
+    // Show success message and redirect to login
+    console.log("Signup successful:", userData);
+    setShowSignup(false);
+    setShowLogin(true);
   };
 
   if (showLandingPage) {
     return <LandingPage onLoginClick={handleLoginClick} />;
+  }
+
+  if (showSignup) {
+    return (
+      <SignupPage 
+        onBack={handleBackToLogin}
+        onSignupSuccess={handleSignupSuccess}
+      />
+    );
   }
 
   return (
@@ -155,6 +185,7 @@ const App = () => {
       <AppContent 
         showLogin={showLogin}
         onBackToLanding={handleBackToLanding}
+        onShowSignup={handleSignupClick}
       />
     </AuthProvider>
   );
