@@ -2361,12 +2361,69 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+async def initialize_admin_users():
+    """Create default admin users if they don't exist"""
+    try:
+        # Admin users to create
+        admin_users = [
+            {
+                "email": "adminn@iamsharan.com",
+                "full_name": "Admin User",
+                "password": "Testing@123"
+            },
+            {
+                "email": "self@iamsharan.com", 
+                "full_name": "Self Admin",
+                "password": "Testing@123"
+            }
+        ]
+        
+        for admin_data in admin_users:
+            # Check if admin user already exists
+            existing_admin = await db.users.find_one({"email": admin_data["email"]})
+            if not existing_admin:
+                # Create admin user
+                admin_id = str(uuid.uuid4())
+                hashed_password = hash_password(admin_data["password"])
+                
+                admin_user = User(
+                    id=admin_id,
+                    email=admin_data["email"],
+                    full_name=admin_data["full_name"],
+                    hashed_password=hashed_password,
+                    role=UserRole.ADMIN,
+                    is_active=True,
+                    created_at=datetime.utcnow(),
+                    last_login=None
+                )
+                
+                await db.users.insert_one(admin_user.dict())
+                logging.info(f"Created admin user: {admin_data['email']}")
+                
+                # Log audit event
+                await log_audit_event(
+                    event_type="admin_creation",
+                    user_email="system",
+                    action="create_admin_user",
+                    details={
+                        "admin_email": admin_data["email"],
+                        "full_name": admin_data["full_name"],
+                        "creation_method": "system_initialization"
+                    }
+                )
+    except Exception as e:
+        logging.error(f"Error creating admin users: {str(e)}")
+
+# Application startup
 @app.on_event("startup")
 async def startup_event():
     """Initialize the application"""
-    await init_default_admin()
-    await init_sample_data()
-    logging.info("Application startup complete")
+    logging.info("Starting Cloud Access Visualizer API...")
+    
+    # Initialize admin users
+    await initialize_admin_users()
+    
+    logging.info("Cloud Access Visualizer API started successfully")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
