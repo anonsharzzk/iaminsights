@@ -256,7 +256,8 @@ current_focus:
   - "Authentication Flow Testing"
   - "Session Persistence Testing"
 
-stuck_tasks: []
+stuck_tasks:
+  - "Session Persistence Testing"
 
 test_all: true
 test_priority: "high_first"
