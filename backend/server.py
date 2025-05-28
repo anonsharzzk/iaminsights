@@ -217,7 +217,7 @@ db = client[os.environ['DB_NAME']]
 # JWT Configuration
 SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'your-secret-key-change-in-production-urgently-this-is-not-secure')
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours = 1440 minutes
 
 # Security
 security = HTTPBearer()
