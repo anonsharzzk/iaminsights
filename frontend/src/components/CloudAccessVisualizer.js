@@ -3,6 +3,7 @@ import axios from "axios";
 import CytoscapeComponent from "react-cytoscapejs";
 import cytoscape from "cytoscape";
 import coseBilkent from "cytoscape-cose-bilkent";
+import EnhancedAnalytics from "./EnhancedAnalytics";
 import { 
   Search, Users, Shield, BarChart3, Cloud, Server, Database, Key, 
   Download, RefreshCw, Filter, Eye, Settings, Upload, 
