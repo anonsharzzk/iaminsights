@@ -30,12 +30,14 @@ class UserRole(str, Enum):
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: EmailStr
+    full_name: str
     hashed_password: str
     role: UserRole = UserRole.USER
     is_active: bool = True
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: Optional[str] = None  # Admin who created the user
+    last_login: Optional[datetime] = None
 
 class UserCreate(BaseModel):
     email: EmailStr
