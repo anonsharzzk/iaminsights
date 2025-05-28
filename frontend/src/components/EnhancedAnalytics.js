@@ -189,9 +189,11 @@ const EnhancedAnalytics = () => {
     return () => clearTimeout(timeoutId);
   }, [searchEmail, selectedProvider, selectedRiskLevel, sortBy, sortOrder]);
 
-  // Load data on component mount
+  // Load data on component mount and view changes
   useEffect(() => {
-    if (activeView === "users") {
+    if (activeView === "overview") {
+      fetchOverviewStats();
+    } else if (activeView === "users") {
       fetchUsers();
     } else if (activeView === "providers") {
       fetchProviderAnalytics(selectedProviderDashboard);
