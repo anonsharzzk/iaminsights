@@ -2146,7 +2146,19 @@ async def get_user_risk_analysis(
             "providers_with_access": list(set(r.provider for r in user_access.resources)),
             "services_with_access": list(set(f"{r.provider}-{r.service}" for r in user_access.resources)),
             "total_resources": len(user_access.resources),
-            "last_updated": user_access.last_updated
+            "last_updated": user_access.last_updated,
+            "resource_details": [
+                {
+                    "provider": r.provider,
+                    "service": r.service,
+                    "resource_name": r.resource_name,
+                    "access_type": r.access_type.value if hasattr(r.access_type, 'value') else str(r.access_type),
+                    "is_privileged": r.is_privileged,
+                    "account_id": r.account_id,
+                    "last_used": r.last_used.isoformat() if r.last_used else None,
+                    "mfa_required": r.mfa_required
+                } for r in user_access.resources
+            ]
         }
     
     except HTTPException:
