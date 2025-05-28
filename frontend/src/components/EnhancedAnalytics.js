@@ -38,6 +38,11 @@ const EnhancedAnalytics = () => {
 
   // Fetch paginated users with search and filters
   const fetchUsers = async (page = 1, resetPage = false) => {
+    if (!isAuthenticated) {
+      console.error("User not authenticated");
+      return;
+    }
+    
     setLoading(true);
     try {
       const params = new URLSearchParams({
@@ -62,6 +67,11 @@ const EnhancedAnalytics = () => {
       }
     } catch (error) {
       console.error("Error fetching users:", error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error("Authentication error - token may be invalid");
+      }
+      setUsers([]);
+      setPagination({});
     } finally {
       setLoading(false);
     }
@@ -69,6 +79,11 @@ const EnhancedAnalytics = () => {
 
   // Fetch provider-specific analytics
   const fetchProviderAnalytics = async (provider) => {
+    if (!isAuthenticated) {
+      console.error("User not authenticated");
+      return;
+    }
+    
     try {
       const response = await axios.get(`${API}/analytics/dashboard/${provider}`);
       setProviderAnalytics(prev => ({
@@ -77,17 +92,28 @@ const EnhancedAnalytics = () => {
       }));
     } catch (error) {
       console.error(`Error fetching ${provider} analytics:`, error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error("Authentication error - token may be invalid");
+      }
     }
   };
 
   // Fetch detailed risk analysis for a user
   const fetchUserRiskAnalysis = async (userEmail) => {
+    if (!isAuthenticated) {
+      console.error("User not authenticated");
+      return;
+    }
+    
     try {
       const response = await axios.get(`${API}/risk-analysis/${encodeURIComponent(userEmail)}`);
       setSelectedUserRisk(response.data);
       setRiskAnalysisModal(true);
     } catch (error) {
       console.error("Error fetching user risk analysis:", error);
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        console.error("Authentication error - token may be invalid");
+      }
     }
   };
 
