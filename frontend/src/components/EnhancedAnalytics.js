@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useAuth } from "./AuthContext";
 import { 
   Search, Users, Shield, BarChart3, Cloud, Server, Database, Key, 
   Download, RefreshCw, Filter, Eye, Settings, AlertTriangle, 
@@ -11,6 +12,8 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const EnhancedAnalytics = () => {
+  const { token, isAuthenticated } = useAuth();
+  
   // Main state
   const [activeView, setActiveView] = useState("overview");
   const [loading, setLoading] = useState(false);
