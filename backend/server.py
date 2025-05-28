@@ -54,6 +54,7 @@ class UserLogin(BaseModel):
 class UserResponse(BaseModel):
     id: str
     email: EmailStr
+    full_name: str
     role: UserRole
     is_active: bool
     created_at: datetime
