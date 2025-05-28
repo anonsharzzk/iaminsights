@@ -1323,6 +1323,91 @@ def generate_graph_data(user_access: UserAccess) -> GraphData:
 # API Routes
 
 # Authentication Endpoints
+# Authentication endpoints
+@api_router.post("/auth/signup")
+async def signup(user_data: dict):
+    """Register a new user"""
+    try:
+        email = user_data.get("email", "").strip().lower()
+        password = user_data.get("password", "")
+        full_name = user_data.get("full_name", "").strip()
+        
+        # Validation
+        if not email or not password or not full_name:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email, password, and full name are required"
+            )
+        
+        if len(password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Password must be at least 6 characters long"
+            )
+        
+        # Check if user already exists
+        existing_user = await db.users.find_one({"email": email})
+        if existing_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email already registered"
+            )
+        
+        # Create new user
+        user_id = str(uuid.uuid4())
+        hashed_password = hash_password(password)
+        
+        # Determine role (first user is admin, others are users)
+        user_count = await db.users.count_documents({})
+        role = UserRole.ADMIN if user_count == 0 else UserRole.USER
+        
+        new_user = User(
+            id=user_id,
+            email=email,
+            full_name=full_name,
+            hashed_password=hashed_password,
+            role=role,
+            is_active=True,
+            created_at=datetime.utcnow(),
+            last_login=None
+        )
+        
+        # Insert user into database
+        await db.users.insert_one(new_user.dict())
+        
+        # Log audit event
+        await log_audit_event(
+            event_type="user_registration",
+            user_email=email,
+            action="create_account",
+            details={
+                "user_email": email,
+                "full_name": full_name,
+                "role": role.value,
+                "registration_method": "signup"
+            }
+        )
+        
+        logging.info(f"New user registered: {email} with role {role.value}")
+        
+        return {
+            "message": "User registered successfully",
+            "user": {
+                "email": email,
+                "full_name": full_name,
+                "role": role.value
+            }
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error during user registration: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error creating user account"
+        )
+
 @api_router.post("/auth/login", response_model=Token)
 async def login(user_credentials: UserLogin):
     """Authenticate user and return JWT token"""
