@@ -797,25 +797,174 @@ const EnhancedAnalytics = () => {
                   </div>
                 )}
 
-                {/* Access Summary */}
+                {/* User Permissions Section */}
                 <div className="bg-slate-700/30 rounded-lg p-4">
-                  <h4 className="text-lg font-semibold text-white mb-4">Access Summary</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-white">{selectedUserRisk.total_resources}</p>
-                      <p className="text-slate-300 text-sm">Total Resources</p>
+                  <h4 className="text-lg font-semibold text-white mb-4">User Permissions</h4>
+                  <div className="space-y-3">
+                    {selectedUserRisk.services_with_access.map((service, index) => {
+                      // Find corresponding resources for this service
+                      const serviceResources = selectedUserRisk.providers_with_access.length > 0 ? 
+                        [{ name: service, access_type: "Read/Write/Admin" }] : [];
+                      
+                      return (
+                        <div key={index} className="bg-slate-800/50 rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="text-white font-medium">{service}</p>
+                              <div className="mt-2 space-y-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-1 rounded border border-blue-500/30">
+                                    Read Access
+                                  </span>
+                                  <span className="text-xs bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded border border-yellow-500/30">
+                                    Write Access
+                                  </span>
+                                  {selectedUserRisk.admin_access_count > 0 && (
+                                    <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded border border-red-500/30">
+                                      Admin Access
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="ml-4">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                                selectedUserRisk.admin_access_count > 0 ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                              }`}>
+                                {selectedUserRisk.admin_access_count > 0 ? 'High Privilege' : 'Standard Access'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Impact Analysis Section */}
+                <div className="bg-slate-700/30 rounded-lg p-4">
+                  <h4 className="text-lg font-semibold text-white mb-4">Potential Impact Analysis</h4>
+                  <div className="space-y-4">
+                    
+                    {/* Data Access Impact */}
+                    <div className="bg-slate-800/50 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <Database className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-white font-medium">Data Access Impact</p>
+                          <p className="text-slate-300 text-sm mt-1">
+                            With {selectedUserRisk.total_resources} resource access grants, this user can potentially:
+                          </p>
+                          <ul className="text-slate-400 text-sm mt-2 space-y-1">
+                            <li>• Read sensitive data from {selectedUserRisk.providers_with_access.length} cloud provider(s)</li>
+                            <li>• Access customer information and business data</li>
+                            {selectedUserRisk.admin_access_count > 0 && (
+                              <li>• Modify or delete critical business data</li>
+                            )}
+                          </ul>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-white">{selectedUserRisk.admin_access_count}</p>
-                      <p className="text-slate-300 text-sm">Admin Access</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-white">{selectedUserRisk.providers_with_access.length}</p>
-                      <p className="text-slate-300 text-sm">Providers</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold text-white">{selectedUserRisk.services_with_access.length}</p>
-                      <p className="text-slate-300 text-sm">Services</p>
+
+                    {/* System Control Impact */}
+                    {selectedUserRisk.admin_access_count > 0 && (
+                      <div className="bg-slate-800/50 rounded-lg p-4">
+                        <div className="flex items-start space-x-3">
+                          <Settings className="w-5 h-5 text-orange-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-white font-medium">System Control Impact</p>
+                            <p className="text-slate-300 text-sm mt-1">
+                              With {selectedUserRisk.admin_access_count} administrative access grant(s):
+                            </p>
+                            <ul className="text-slate-400 text-sm mt-2 space-y-1">
+                              <li>• Create, modify, or delete user accounts and permissions</li>
+                              <li>• Change system configurations and security settings</li>
+                              <li>• Access administrative logs and monitoring data</li>
+                              <li>• Deploy or modify applications and services</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Cross-Provider Risk */}
+                    {selectedUserRisk.providers_with_access.length > 1 && (
+                      <div className="bg-slate-800/50 rounded-lg p-4">
+                        <div className="flex items-start space-x-3">
+                          <Cloud className="w-5 h-5 text-purple-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-white font-medium">Cross-Provider Risk</p>
+                            <p className="text-slate-300 text-sm mt-1">
+                              Access across {selectedUserRisk.providers_with_access.length} providers ({selectedUserRisk.providers_with_access.join(', ')}):
+                            </p>
+                            <ul className="text-slate-400 text-sm mt-2 space-y-1">
+                              <li>• Potential for lateral movement between cloud environments</li>
+                              <li>• Increased attack surface across multiple platforms</li>
+                              <li>• Complex permission interactions and dependencies</li>
+                              {selectedUserRisk.cross_provider_admin && (
+                                <li>• <span className="text-red-400 font-medium">Critical:</span> Administrative access across multiple clouds</li>
+                              )}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Privilege Escalation Impact */}
+                    {selectedUserRisk.privilege_escalation_paths.length > 0 && (
+                      <div className="bg-slate-800/50 rounded-lg p-4">
+                        <div className="flex items-start space-x-3">
+                          <TrendingUp className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-white font-medium">Privilege Escalation Impact</p>
+                            <p className="text-slate-300 text-sm mt-1">
+                              {selectedUserRisk.privilege_escalation_paths.length} escalation path(s) detected:
+                            </p>
+                            <ul className="text-slate-400 text-sm mt-2 space-y-1">
+                              <li>• Can potentially gain higher privileges than initially granted</li>
+                              <li>• May bypass intended access controls and restrictions</li>
+                              <li>• Could lead to unauthorized administrative access</li>
+                              <li>• Risk of permanent privilege elevation through configuration changes</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Business Impact Summary */}
+                    <div className="bg-gradient-to-r from-red-500/10 to-orange-500/10 border border-red-500/30 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <AlertTriangle className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-white font-medium">Overall Business Impact</p>
+                          <p className="text-slate-300 text-sm mt-1">
+                            Risk Level: <span className={`font-bold ${
+                              selectedUserRisk.risk_level === 'critical' ? 'text-red-400' :
+                              selectedUserRisk.risk_level === 'high' ? 'text-orange-400' :
+                              selectedUserRisk.risk_level === 'medium' ? 'text-yellow-400' : 'text-green-400'
+                            }`}>
+                              {selectedUserRisk.risk_level.toUpperCase()}
+                            </span>
+                          </p>
+                          <div className="mt-2">
+                            <p className="text-slate-400 text-sm">
+                              {selectedUserRisk.risk_level === 'critical' && 
+                                "Immediate action required. This user poses significant risk to data security and system integrity."
+                              }
+                              {selectedUserRisk.risk_level === 'high' && 
+                                "High priority for review. User has elevated privileges that could impact business operations."
+                              }
+                              {selectedUserRisk.risk_level === 'medium' && 
+                                "Moderate risk. Regular monitoring and periodic access review recommended."
+                              }
+                              {selectedUserRisk.risk_level === 'low' && 
+                                "Low risk profile. Standard security monitoring sufficient."
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
