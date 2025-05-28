@@ -131,43 +131,62 @@ const CloudAccessVisualizer = () => {
         quality: 'default',
         nodeDimensionsIncludeLabels: true,
         fit: true,
-        padding: 20,
+        padding: 40,
         randomize: false,
-        nodeRepulsion: 4500,
-        idealEdgeLength: 100,
+        nodeRepulsion: 8000,
+        idealEdgeLength: 150,
         edgeElasticity: 0.45,
         nestingFactor: 0.1,
-        gravity: 0.25,
-        numIter: 2500,
+        gravity: 0.15,
+        numIter: 3000,
         tile: false,
         animate: 'end',
-        animationDuration: 1000
+        animationDuration: 1500,
+        componentSpacing: 80,
+        coolingFactor: 0.99
       },
       'circle': {
         name: 'circle',
         fit: true,
-        padding: 30,
+        padding: 50,
         avoidOverlap: true,
         animate: true,
-        animationDuration: 500
+        animationDuration: 800,
+        spacingFactor: 2.0
       },
       'grid': {
         name: 'grid',
         fit: true,
-        padding: 30,
+        padding: 50,
         avoidOverlap: true,
         animate: true,
-        animationDuration: 500
+        animationDuration: 800,
+        spacingFactor: 1.5,
+        columns: undefined
       },
       'breadthfirst': {
         name: 'breadthfirst',
         fit: true,
         directed: false,
-        padding: 30,
-        spacingFactor: 1.75,
+        padding: 50,
+        spacingFactor: 2.5,
         avoidOverlap: true,
         animate: true,
-        animationDuration: 500
+        animationDuration: 800,
+        maximal: false
+      },
+      'concentric': {
+        name: 'concentric',
+        fit: true,
+        padding: 50,
+        startAngle: 3 / 2 * Math.PI,
+        sweep: undefined,
+        clockwise: true,
+        equidistant: false,
+        minNodeSpacing: 50,
+        avoidOverlap: true,
+        animate: true,
+        animationDuration: 800
       }
     };
     
