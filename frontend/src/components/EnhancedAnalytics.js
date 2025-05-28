@@ -606,89 +606,195 @@ const EnhancedAnalytics = () => {
               <div className="space-y-6">
                 {/* Provider Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                    <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">
-                      {providerAnalytics[selectedProviderDashboard].summary.total_users}
-                    </p>
-                    <p className="text-slate-300 text-sm">Total Users</p>
+                  <div className="bg-slate-700/30 rounded-lg p-4 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-blue-600/5"></div>
+                    <div className="relative">
+                      <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-white">
+                        {providerAnalytics[selectedProviderDashboard].summary.total_users}
+                      </p>
+                      <p className="text-slate-300 text-sm">Total Users</p>
+                    </div>
                   </div>
-                  <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                    <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">
-                      {providerAnalytics[selectedProviderDashboard].summary.privilege_escalation_count}
-                    </p>
-                    <p className="text-slate-300 text-sm">Escalation Risks</p>
+                  <div className="bg-slate-700/30 rounded-lg p-4 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-red-600/5"></div>
+                    <div className="relative">
+                      <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-white">
+                        {providerAnalytics[selectedProviderDashboard].summary.privilege_escalation_count}
+                      </p>
+                      <p className="text-slate-300 text-sm">Escalation Risks</p>
+                    </div>
                   </div>
-                  <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                    <Shield className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">
-                      {providerAnalytics[selectedProviderDashboard].summary.cross_account_users}
-                    </p>
-                    <p className="text-slate-300 text-sm">Cross-Account Users</p>
+                  <div className="bg-slate-700/30 rounded-lg p-4 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-orange-600/5"></div>
+                    <div className="relative">
+                      <Shield className="w-8 h-8 text-orange-400 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-white">
+                        {providerAnalytics[selectedProviderDashboard].summary.cross_account_users}
+                      </p>
+                      <p className="text-slate-300 text-sm">Cross-Account Users</p>
+                    </div>
                   </div>
-                  <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-                    <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                    <p className="text-2xl font-bold text-white">
-                      {Object.keys(providerAnalytics[selectedProviderDashboard].summary.service_breakdown).length}
-                    </p>
-                    <p className="text-slate-300 text-sm">Services</p>
+                  <div className="bg-slate-700/30 rounded-lg p-4 text-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500/10 to-green-600/5"></div>
+                    <div className="relative">
+                      <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-white">
+                        {Object.keys(providerAnalytics[selectedProviderDashboard].summary.service_breakdown).length}
+                      </p>
+                      <p className="text-slate-300 text-sm">Services</p>
+                    </div>
                   </div>
                 </div>
 
-                {/* Top Risky Services */}
+                {/* Risk Distribution Chart */}
                 <div className="bg-slate-700/30 rounded-lg p-6">
                   <h4 className="text-lg font-semibold text-white mb-4">
-                    Top Risky {selectedProviderDashboard.toUpperCase()} Services
+                    {selectedProviderDashboard.toUpperCase()} Risk Distribution
                   </h4>
-                  <div className="space-y-3">
-                    {providerAnalytics[selectedProviderDashboard].top_risky_services.slice(0, 5).map((service, index) => (
-                      <div key={index} className="flex items-center justify-between bg-slate-800/50 rounded-lg p-4">
-                        <div>
-                          <p className="text-white font-medium">{service.service}</p>
-                          <p className="text-slate-400 text-sm">
-                            {service.total_users} users • {service.admin_users} admin access
-                          </p>
+                  <div className="space-y-4">
+                    {Object.entries(providerAnalytics[selectedProviderDashboard].summary.risk_distribution).map(([level, count]) => {
+                      const total = providerAnalytics[selectedProviderDashboard].summary.total_users;
+                      const percentage = total > 0 ? (count / total) * 100 : 0;
+                      
+                      return (
+                        <div key={level} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRiskBadgeColor(level)}`}>
+                              {level.charAt(0).toUpperCase() + level.slice(1)} Risk
+                            </span>
+                            <div className="text-right">
+                              <span className="text-white font-bold">{count}</span>
+                              <span className="text-slate-400 text-sm ml-2">({percentage.toFixed(1)}%)</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-slate-800 rounded-full h-2.5">
+                            <div 
+                              className={`h-2.5 rounded-full transition-all duration-1000 ease-out ${
+                                level === 'critical' ? 'bg-red-500' :
+                                level === 'high' ? 'bg-orange-500' :
+                                level === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${percentage}%` }}
+                            ></div>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-white font-bold">{service.avg_risk.toFixed(1)}</p>
-                          <p className="text-slate-400 text-xs">Avg Risk</p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 
-                {/* Top Risks for Provider */}
+                {/* Service Risk Visualization */}
+                <div className="bg-slate-700/30 rounded-lg p-6">
+                  <h4 className="text-lg font-semibold text-white mb-4">
+                    Service Risk Heatmap - {selectedProviderDashboard.toUpperCase()}
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {providerAnalytics[selectedProviderDashboard].top_risky_services.slice(0, 6).map((service, index) => {
+                      const riskIntensity = Math.min(service.avg_risk / 100, 1);
+                      
+                      return (
+                        <div 
+                          key={index} 
+                          className={`relative p-4 rounded-lg border transition-all duration-300 hover:scale-105 ${
+                            service.avg_risk >= 75 ? 'bg-red-500/20 border-red-500/30' :
+                            service.avg_risk >= 50 ? 'bg-orange-500/20 border-orange-500/30' :
+                            service.avg_risk >= 25 ? 'bg-yellow-500/20 border-yellow-500/30' :
+                            'bg-green-500/20 border-green-500/30'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <Server className={`w-5 h-5 ${
+                              service.avg_risk >= 75 ? 'text-red-400' :
+                              service.avg_risk >= 50 ? 'text-orange-400' :
+                              service.avg_risk >= 25 ? 'text-yellow-400' : 'text-green-400'
+                            }`} />
+                            <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                              service.avg_risk >= 75 ? 'bg-red-500/30 text-red-300' :
+                              service.avg_risk >= 50 ? 'bg-orange-500/30 text-orange-300' :
+                              service.avg_risk >= 25 ? 'bg-yellow-500/30 text-yellow-300' :
+                              'bg-green-500/30 text-green-300'
+                            }`}>
+                              {service.avg_risk.toFixed(0)}
+                            </span>
+                          </div>
+                          <p className="text-white font-medium text-sm mb-1">{service.service}</p>
+                          <p className="text-slate-400 text-xs">
+                            {service.total_users} users • {service.admin_users} admin
+                          </p>
+                          
+                          {/* Risk intensity indicator */}
+                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-slate-800 rounded-b-lg">
+                            <div 
+                              className={`h-full rounded-b-lg transition-all duration-1000 ease-out ${
+                                service.avg_risk >= 75 ? 'bg-red-500' :
+                                service.avg_risk >= 50 ? 'bg-orange-500' :
+                                service.avg_risk >= 25 ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.max(riskIntensity * 100, 5)}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Top Risk Users with Visual Indicators */}
                 <div className="bg-slate-700/30 rounded-lg p-6">
                   <h4 className="text-lg font-semibold text-white mb-4">
                     Top {selectedProviderDashboard.toUpperCase()} Risk Users
                   </h4>
                   <div className="space-y-3">
-                    {providerAnalytics[selectedProviderDashboard].summary.top_risks.slice(0, 5).map((user, index) => (
-                      <div key={index} className="flex items-center justify-between bg-slate-800/50 rounded-lg p-4">
-                        <div>
-                          <p className="text-white font-medium">{user.user_email}</p>
-                          <p className="text-slate-400 text-sm">
-                            Primary risks: {user.primary_risks.join(", ")}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                          <div className="text-right">
-                            <p className="text-white font-bold">{user.risk_score.toFixed(1)}</p>
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRiskBadgeColor(user.risk_level)}`}>
-                              {user.risk_level.charAt(0).toUpperCase() + user.risk_level.slice(1)}
-                            </span>
+                    {providerAnalytics[selectedProviderDashboard].summary.top_risks.slice(0, 5).map((user, index) => {
+                      const riskPercentage = (user.risk_score / 100) * 100;
+                      
+                      return (
+                        <div key={index} className="bg-slate-800/50 rounded-lg p-4 hover:bg-slate-800/70 transition-colors duration-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-3 h-3 rounded-full ${getRiskBadgeColor(user.risk_level).includes('red') ? 'bg-red-500' :
+                                getRiskBadgeColor(user.risk_level).includes('orange') ? 'bg-orange-500' :
+                                getRiskBadgeColor(user.risk_level).includes('yellow') ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}></div>
+                              <div>
+                                <p className="text-white font-medium">{user.user_email}</p>
+                                <p className="text-slate-400 text-sm">
+                                  Primary risks: {user.primary_risks.slice(0, 2).join(", ")}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-3">
+                              <div className="text-right">
+                                <p className="text-white font-bold">{user.risk_score.toFixed(1)}</p>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getRiskBadgeColor(user.risk_level)}`}>
+                                  {user.risk_level.charAt(0).toUpperCase() + user.risk_level.slice(1)}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => fetchUserRiskAnalysis(user.user_email)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
-                          <button
-                            onClick={() => fetchUserRiskAnalysis(user.user_email)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors duration-200"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                          
+                          {/* Risk progress bar */}
+                          <div className="w-full bg-slate-800 rounded-full h-2">
+                            <div 
+                              className={`h-2 rounded-full transition-all duration-1000 ease-out ${
+                                user.risk_level === 'critical' ? 'bg-red-500' :
+                                user.risk_level === 'high' ? 'bg-orange-500' :
+                                user.risk_level === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                              }`}
+                              style={{ width: `${Math.min(riskPercentage, 100)}%` }}
+                            ></div>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </div>
