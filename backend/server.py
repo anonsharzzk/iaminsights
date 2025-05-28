@@ -458,75 +458,479 @@ async def init_default_admin():
         await db.users.insert_one(secondary_admin.dict())
         logging.info("Secondary admin user created: adminn@iamsharan.com")
 
-# Risk Analysis Functions
-def calculate_risk_score(user_access: UserAccess) -> float:
-    """Calculate overall risk score for a user based on their access patterns"""
+# Enhanced Risk Analysis Models
+class RiskFactor(BaseModel):
+    factor_type: str
+    description: str
+    weight: float
+    severity: str  # low, medium, high, critical
+    justification: str
+
+class RiskAnalysisResult(BaseModel):
+    overall_score: float
+    risk_level: str
+    risk_factors: List[RiskFactor]
+    recommendations: List[str]
+    confidence_score: float
+
+class SensitiveResource(BaseModel):
+    provider: str
+    service: str
+    resource_patterns: List[str]
+    sensitivity_level: str  # low, medium, high, critical
+    description: str
+
+# Audit Logging Models
+class AuditEvent(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    event_type: str
+    user_email: str
+    target_user: Optional[str] = None
+    action: str
+    details: Dict[str, Any]
+    risk_score_before: Optional[float] = None
+    risk_score_after: Optional[float] = None
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+
+# Enhanced Risk Analysis Functions
+
+# Define sensitive resources patterns
+SENSITIVE_RESOURCES = {
+    "aws": [
+        SensitiveResource(
+            provider="aws",
+            service="S3",
+            resource_patterns=["prod", "production", "backup", "finance", "hr", "security", "admin"],
+            sensitivity_level="high",
+            description="Production and sensitive data buckets"
+        ),
+        SensitiveResource(
+            provider="aws",
+            service="IAM",
+            resource_patterns=["admin", "root", "master", "security"],
+            sensitivity_level="critical",
+            description="Administrative IAM resources"
+        ),
+        SensitiveResource(
+            provider="aws",
+            service="RDS",
+            resource_patterns=["prod", "production", "master", "primary"],
+            sensitivity_level="high",
+            description="Production databases"
+        ),
+        SensitiveResource(
+            provider="aws",
+            service="Lambda",
+            resource_patterns=["admin", "security", "payment", "finance"],
+            sensitivity_level="medium",
+            description="Critical business functions"
+        )
+    ],
+    "gcp": [
+        SensitiveResource(
+            provider="gcp",
+            service="Cloud Storage",
+            resource_patterns=["prod", "production", "backup", "finance", "hr"],
+            sensitivity_level="high",
+            description="Production storage buckets"
+        ),
+        SensitiveResource(
+            provider="gcp",
+            service="Cloud IAM",
+            resource_patterns=["admin", "owner", "editor"],
+            sensitivity_level="critical",
+            description="High-privilege IAM roles"
+        ),
+        SensitiveResource(
+            provider="gcp",
+            service="BigQuery",
+            resource_patterns=["prod", "production", "analytics", "customer"],
+            sensitivity_level="high",
+            description="Production data warehouses"
+        )
+    ],
+    "azure": [
+        SensitiveResource(
+            provider="azure",
+            service="Storage",
+            resource_patterns=["prod", "production", "backup", "finance"],
+            sensitivity_level="high",
+            description="Production storage accounts"
+        ),
+        SensitiveResource(
+            provider="azure",
+            service="Active Directory",
+            resource_patterns=["admin", "global", "security"],
+            sensitivity_level="critical",
+            description="Directory administration"
+        ),
+        SensitiveResource(
+            provider="azure",
+            service="Key Vault",
+            resource_patterns=["prod", "production", "master"],
+            sensitivity_level="critical",
+            description="Production secrets and keys"
+        )
+    ],
+    "okta": [
+        SensitiveResource(
+            provider="okta",
+            service="Admin",
+            resource_patterns=["admin", "super", "security"],
+            sensitivity_level="critical",
+            description="Administrative access to identity management"
+        ),
+        SensitiveResource(
+            provider="okta",
+            service="Salesforce",
+            resource_patterns=["admin", "system"],
+            sensitivity_level="high",
+            description="CRM administrative access"
+        ),
+        SensitiveResource(
+            provider="okta",
+            service="AWS SSO",
+            resource_patterns=["admin", "power", "dev"],
+            sensitivity_level="high",
+            description="Cloud platform access"
+        )
+    ]
+}
+
+def is_sensitive_resource(resource: CloudResource) -> tuple[bool, str, str]:
+    """Check if a resource is considered sensitive"""
+    provider_patterns = SENSITIVE_RESOURCES.get(resource.provider, [])
+    
+    for sensitive in provider_patterns:
+        if sensitive.service.lower() == resource.service.lower():
+            for pattern in sensitive.resource_patterns:
+                if pattern.lower() in resource.resource_name.lower():
+                    return True, sensitive.sensitivity_level, sensitive.description
+    
+    return False, "low", "Standard resource"
+
+def calculate_cross_account_risk(user_access: UserAccess) -> float:
+    """Calculate risk from cross-account access patterns"""
+    accounts = set()
     risk_score = 0.0
     
-    # Base risk factors
-    admin_count = sum(1 for resource in user_access.resources if resource.access_type == AccessType.ADMIN)
-    privileged_count = sum(1 for resource in user_access.resources if resource.is_privileged)
-    providers = set(resource.provider for resource in user_access.resources)
+    for resource in user_access.resources:
+        if resource.account_id:
+            accounts.add(resource.account_id)
     
-    # Risk scoring logic
-    risk_score += admin_count * 10  # Admin access adds significant risk
-    risk_score += privileged_count * 5  # Privileged access adds moderate risk
-    risk_score += len(providers) * 3  # Cross-provider access adds risk
+    # Multiple accounts increase risk exponentially
+    if len(accounts) > 1:
+        risk_score = len(accounts) * 15.0  # 15 points per additional account
+        if len(accounts) > 3:
+            risk_score += 20.0  # Bonus risk for many accounts
     
-    # Service account risk adjustment
-    if user_access.is_service_account:
-        risk_score *= 1.5  # Service accounts are higher risk
-    
-    # Cross-provider admin bonus risk
-    if admin_count > 0 and len(providers) > 2:
-        risk_score += 20
-        user_access.cross_provider_admin = True
-    
-    return min(risk_score, 100.0)  # Cap at 100
+    return min(risk_score, 50.0)  # Cap at 50 points
 
-def detect_privilege_escalation_paths(user_access: UserAccess) -> List[PrivilegeEscalationPath]:
-    """Detect potential privilege escalation paths for a user"""
-    paths = []
+def calculate_sensitive_resource_risk(user_access: UserAccess) -> tuple[float, List[RiskFactor]]:
+    """Calculate risk from access to sensitive resources"""
+    risk_score = 0.0
+    risk_factors = []
     
-    # Simple escalation detection: read -> write -> admin within same service
+    sensitive_count = {"low": 0, "medium": 0, "high": 0, "critical": 0}
+    
+    for resource in user_access.resources:
+        is_sensitive, level, description = is_sensitive_resource(resource)
+        if is_sensitive:
+            sensitive_count[level] += 1
+            
+            # Score based on sensitivity and access type
+            base_score = {"low": 2, "medium": 5, "high": 10, "critical": 20}[level]
+            access_multiplier = {"read": 1.0, "write": 1.5, "admin": 2.5, "owner": 3.0}.get(resource.access_type, 1.0)
+            
+            resource_risk = base_score * access_multiplier
+            risk_score += resource_risk
+            
+            if resource_risk > 10:  # Only add significant risks to factors
+                risk_factors.append(RiskFactor(
+                    factor_type="sensitive_resource_access",
+                    description=f"{resource.access_type.title()} access to {resource.provider.upper()} {resource.service} ({resource.resource_name})",
+                    weight=resource_risk,
+                    severity=level,
+                    justification=f"Access to {description} with {resource.access_type} permissions"
+                ))
+    
+    # Add summary risk factor if multiple sensitive resources
+    total_sensitive = sum(sensitive_count.values())
+    if total_sensitive > 5:
+        risk_factors.append(RiskFactor(
+            factor_type="excessive_sensitive_access",
+            description=f"Access to {total_sensitive} sensitive resources",
+            weight=total_sensitive * 2.0,
+            severity="high" if total_sensitive > 10 else "medium",
+            justification=f"Excessive access breadth across sensitive systems"
+        ))
+        risk_score += total_sensitive * 2.0
+    
+    return min(risk_score, 60.0), risk_factors
+
+def calculate_unused_privilege_risk(user_access: UserAccess) -> tuple[float, List[RiskFactor]]:
+    """Calculate risk from unused privileges"""
+    risk_score = 0.0
+    risk_factors = []
+    
+    unused_count = 0
+    unused_admin_count = 0
+    
+    for resource in user_access.resources:
+        if resource.last_used:
+            days_unused = (datetime.utcnow() - resource.last_used).days
+            if days_unused > 90:  # Unused for more than 90 days
+                unused_count += 1
+                if resource.access_type == AccessType.ADMIN:
+                    unused_admin_count += 1
+                    risk_score += 8.0  # Higher risk for unused admin access
+                else:
+                    risk_score += 3.0
+    
+    if unused_count > 0:
+        risk_factors.append(RiskFactor(
+            factor_type="unused_privileges",
+            description=f"{unused_count} unused privileges ({unused_admin_count} admin)",
+            weight=risk_score,
+            severity="high" if unused_admin_count > 0 else "medium",
+            justification=f"Privileges not used in 90+ days indicate over-provisioning"
+        ))
+    
+    return min(risk_score, 40.0), risk_factors
+
+def calculate_privilege_escalation_risk(user_access: UserAccess) -> tuple[float, List[RiskFactor], List[PrivilegeEscalationPath]]:
+    """Enhanced privilege escalation detection"""
+    risk_score = 0.0
+    risk_factors = []
+    escalation_paths = []
+    
+    # Group resources by provider-service
     services_access = {}
     for resource in user_access.resources:
         key = f"{resource.provider}-{resource.service}"
         if key not in services_access:
             services_access[key] = []
-        services_access[key].append(resource.access_type)
+        services_access[key].append(resource)
     
-    for service, access_types in services_access.items():
-        access_set = set(access_types)
-        if AccessType.READ in access_set and AccessType.ADMIN in access_set:
-            paths.append(PrivilegeEscalationPath(
+    for service_key, resources in services_access.items():
+        access_types = set(r.access_type for r in resources)
+        
+        # Check for escalation patterns
+        escalation_risk = 0.0
+        
+        # Pattern 1: Read + Write + Admin in same service
+        if {AccessType.READ, AccessType.WRITE, AccessType.ADMIN}.issubset(access_types):
+            escalation_risk += 30.0
+            escalation_paths.append(PrivilegeEscalationPath(
                 user_email=user_access.user_email,
                 start_privilege="read",
                 end_privilege="admin",
                 path_steps=[
-                    {"step": 1, "action": "exploit_read_access", "service": service},
-                    {"step": 2, "action": "escalate_to_admin", "service": service}
+                    {"step": 1, "action": "exploit_read_access", "service": service_key},
+                    {"step": 2, "action": "escalate_via_write", "service": service_key},
+                    {"step": 3, "action": "achieve_admin_access", "service": service_key}
                 ],
-                risk_score=calculate_escalation_risk(access_set)
+                risk_score=30.0
+            ))
+        
+        # Pattern 2: Read + Admin (bypassing write)
+        elif {AccessType.READ, AccessType.ADMIN}.issubset(access_types):
+            escalation_risk += 20.0
+            escalation_paths.append(PrivilegeEscalationPath(
+                user_email=user_access.user_email,
+                start_privilege="read",
+                end_privilege="admin",
+                path_steps=[
+                    {"step": 1, "action": "exploit_read_access", "service": service_key},
+                    {"step": 2, "action": "escalate_to_admin", "service": service_key}
+                ],
+                risk_score=20.0
+            ))
+        
+        # Pattern 3: Write + Admin
+        elif {AccessType.WRITE, AccessType.ADMIN}.issubset(access_types):
+            escalation_risk += 15.0
+            escalation_paths.append(PrivilegeEscalationPath(
+                user_email=user_access.user_email,
+                start_privilege="write",
+                end_privilege="admin",
+                path_steps=[
+                    {"step": 1, "action": "exploit_write_access", "service": service_key},
+                    {"step": 2, "action": "escalate_to_admin", "service": service_key}
+                ],
+                risk_score=15.0
+            ))
+        
+        risk_score += escalation_risk
+        
+        if escalation_risk > 0:
+            risk_factors.append(RiskFactor(
+                factor_type="privilege_escalation",
+                description=f"Potential escalation path in {service_key}",
+                weight=escalation_risk,
+                severity="high" if escalation_risk >= 25 else "medium",
+                justification=f"Multiple access levels in same service enable privilege escalation"
             ))
     
-    return paths
+    return min(risk_score, 50.0), risk_factors, escalation_paths
 
-def calculate_escalation_risk(access_types: set) -> float:
-    """Calculate risk score for privilege escalation"""
-    base_risk = 30.0
-    if AccessType.WRITE in access_types:
-        base_risk += 20.0
-    if AccessType.ADMIN in access_types:
-        base_risk += 30.0
-    return min(base_risk, 100.0)
+def calculate_comprehensive_risk_score(user_access: UserAccess) -> RiskAnalysisResult:
+    """Calculate comprehensive risk score with detailed breakdown"""
+    total_risk = 0.0
+    all_risk_factors = []
+    all_recommendations = []
+    
+    # 1. Basic access pattern risks
+    admin_count = sum(1 for r in user_access.resources if r.access_type == AccessType.ADMIN)
+    privileged_count = sum(1 for r in user_access.resources if r.is_privileged)
+    providers = set(r.provider for r in user_access.resources)
+    
+    # Admin access risk
+    admin_risk = admin_count * 12.0
+    if admin_count > 0:
+        all_risk_factors.append(RiskFactor(
+            factor_type="admin_access",
+            description=f"{admin_count} administrative access grants",
+            weight=admin_risk,
+            severity="high" if admin_count > 3 else "medium",
+            justification="Administrative access provides broad system control"
+        ))
+        total_risk += admin_risk
+        
+        if admin_count > 5:
+            all_recommendations.append("Review necessity of multiple admin access grants")
+    
+    # Privileged access risk
+    priv_risk = privileged_count * 5.0
+    if privileged_count > admin_count:  # Don't double-count admin as privileged
+        all_risk_factors.append(RiskFactor(
+            factor_type="privileged_access",
+            description=f"{privileged_count} privileged access grants",
+            weight=priv_risk,
+            severity="medium",
+            justification="Privileged access increases attack surface"
+        ))
+        total_risk += priv_risk
+    
+    # Cross-provider risk
+    cross_provider_risk = len(providers) * 8.0 if len(providers) > 1 else 0.0
+    if len(providers) > 2:
+        all_risk_factors.append(RiskFactor(
+            factor_type="cross_provider_access",
+            description=f"Access across {len(providers)} cloud providers",
+            weight=cross_provider_risk,
+            severity="high" if len(providers) > 3 else "medium",
+            justification="Multi-cloud access increases complexity and risk"
+        ))
+        total_risk += cross_provider_risk
+        
+        # Cross-provider admin bonus
+        if admin_count > 0 and len(providers) > 2:
+            bonus_risk = 25.0
+            all_risk_factors.append(RiskFactor(
+                factor_type="cross_provider_admin",
+                description="Admin access across multiple providers",
+                weight=bonus_risk,
+                severity="critical",
+                justification="Cross-cloud administrative access creates superuser risk"
+            ))
+            total_risk += bonus_risk
+            user_access.cross_provider_admin = True
+            all_recommendations.append("Audit cross-provider administrative access immediately")
+    
+    # 2. Cross-account access risk
+    cross_account_risk = calculate_cross_account_risk(user_access)
+    if cross_account_risk > 0:
+        all_risk_factors.append(RiskFactor(
+            factor_type="cross_account_access",
+            description="Access across multiple accounts",
+            weight=cross_account_risk,
+            severity="medium",
+            justification="Cross-account access increases lateral movement risk"
+        ))
+        total_risk += cross_account_risk
+        all_recommendations.append("Review cross-account access patterns")
+    
+    # 3. Sensitive resource access risk
+    sensitive_risk, sensitive_factors = calculate_sensitive_resource_risk(user_access)
+    total_risk += sensitive_risk
+    all_risk_factors.extend(sensitive_factors)
+    if sensitive_risk > 20:
+        all_recommendations.append("Implement additional monitoring for sensitive resource access")
+    
+    # 4. Unused privilege risk
+    unused_risk, unused_factors = calculate_unused_privilege_risk(user_access)
+    total_risk += unused_risk
+    all_risk_factors.extend(unused_factors)
+    if unused_risk > 15:
+        all_recommendations.append("Remove unused privileges to reduce attack surface")
+    
+    # 5. Privilege escalation risk
+    escalation_risk, escalation_factors, escalation_paths = calculate_privilege_escalation_risk(user_access)
+    total_risk += escalation_risk
+    all_risk_factors.extend(escalation_factors)
+    user_access.privilege_escalation_paths = escalation_paths
+    if escalation_risk > 20:
+        all_recommendations.append("Redesign access grants to eliminate escalation paths")
+    
+    # 6. Service account adjustments
+    if user_access.is_service_account:
+        service_multiplier = 1.3
+        service_bonus = total_risk * 0.3
+        all_risk_factors.append(RiskFactor(
+            factor_type="service_account",
+            description="Service account with elevated privileges",
+            weight=service_bonus,
+            severity="medium",
+            justification="Service accounts typically have persistent, unmonitored access"
+        ))
+        total_risk *= service_multiplier
+        all_recommendations.append("Implement service account rotation and monitoring")
+    
+    # Calculate confidence score based on data completeness
+    confidence_score = 0.8  # Base confidence
+    if any(r.last_used for r in user_access.resources):
+        confidence_score += 0.1  # Have usage data
+    if len(user_access.resources) > 5:
+        confidence_score += 0.1  # Sufficient sample size
+    
+    # Determine risk level
+    final_score = min(total_risk, 100.0)
+    if final_score >= 80:
+        risk_level = "critical"
+    elif final_score >= 60:
+        risk_level = "high"
+    elif final_score >= 30:
+        risk_level = "medium"
+    else:
+        risk_level = "low"
+    
+    # Add general recommendations
+    if not all_recommendations:
+        all_recommendations.append("Maintain current access patterns with regular reviews")
+    
+    all_recommendations.append("Enable MFA for all privileged accounts")
+    all_recommendations.append("Implement regular access reviews")
+    
+    return RiskAnalysisResult(
+        overall_score=final_score,
+        risk_level=risk_level,
+        risk_factors=all_risk_factors,
+        recommendations=list(set(all_recommendations)),  # Remove duplicates
+        confidence_score=min(confidence_score, 1.0)
+    )
 
 def analyze_user_access(user_access: UserAccess) -> UserAccess:
     """Perform comprehensive risk analysis on user access"""
-    user_access.overall_risk_score = calculate_risk_score(user_access)
-    user_access.privilege_escalation_paths = detect_privilege_escalation_paths(user_access)
+    # Run comprehensive risk analysis
+    risk_result = calculate_comprehensive_risk_score(user_access)
     
-    # Detect unused privileges (simulate - in real implementation, this would use last_used data)
+    # Update user access with results
+    user_access.overall_risk_score = risk_result.overall_score
+    
+    # Detect unused privileges with 90-day threshold
     user_access.unused_privileges = [
         f"{resource.provider}-{resource.service}"
         for resource in user_access.resources
@@ -534,6 +938,107 @@ def analyze_user_access(user_access: UserAccess) -> UserAccess:
     ]
     
     return user_access
+
+# Audit Logging Functions
+async def log_audit_event(
+    event_type: str,
+    user_email: str,
+    action: str,
+    details: Dict[str, Any],
+    target_user: Optional[str] = None,
+    risk_score_before: Optional[float] = None,
+    risk_score_after: Optional[float] = None
+):
+    """Log audit events for compliance and monitoring"""
+    audit_event = AuditEvent(
+        event_type=event_type,
+        user_email=user_email,
+        target_user=target_user,
+        action=action,
+        details=details,
+        risk_score_before=risk_score_before,
+        risk_score_after=risk_score_after
+    )
+    
+    try:
+        await db.audit_logs.insert_one(audit_event.dict())
+        logging.info(f"Audit event logged: {event_type} by {user_email}")
+    except Exception as e:
+        logging.error(f"Failed to log audit event: {str(e)}")
+
+# Enhanced Analytics Functions
+async def get_provider_risk_analytics(provider: Optional[str] = None) -> Dict[str, Any]:
+    """Get risk analytics for specific provider or all providers"""
+    users = await db.user_access.find().to_list(1000)
+    
+    analytics = {
+        "total_users": 0,
+        "risk_distribution": {"low": 0, "medium": 0, "high": 0, "critical": 0},
+        "top_risks": [],
+        "sensitive_resource_access": {},
+        "privilege_escalation_count": 0,
+        "cross_account_users": 0,
+        "service_breakdown": {}
+    }
+    
+    for user_doc in users:
+        user_access = UserAccess(**user_doc)
+        
+        # Filter by provider if specified
+        if provider:
+            user_resources = [r for r in user_access.resources if r.provider == provider]
+            if not user_resources:
+                continue
+            user_access.resources = user_resources
+        
+        analytics["total_users"] += 1
+        
+        # Perform risk analysis
+        analyzed_user = analyze_user_access(user_access)
+        risk_result = calculate_comprehensive_risk_score(analyzed_user)
+        
+        # Update risk distribution
+        analytics["risk_distribution"][risk_result.risk_level] += 1
+        
+        # Track top risks
+        if risk_result.overall_score > 40:
+            analytics["top_risks"].append({
+                "user_email": user_access.user_email,
+                "user_name": user_access.user_name,
+                "risk_score": risk_result.overall_score,
+                "risk_level": risk_result.risk_level,
+                "primary_risks": [rf.factor_type for rf in risk_result.risk_factors[:3]]
+            })
+        
+        # Count privilege escalations
+        if analyzed_user.privilege_escalation_paths:
+            analytics["privilege_escalation_count"] += 1
+        
+        # Count cross-account access
+        accounts = set(r.account_id for r in user_access.resources if r.account_id)
+        if len(accounts) > 1:
+            analytics["cross_account_users"] += 1
+        
+        # Service breakdown
+        for resource in user_access.resources:
+            service_key = f"{resource.provider}-{resource.service}"
+            if service_key not in analytics["service_breakdown"]:
+                analytics["service_breakdown"][service_key] = {
+                    "user_count": 0,
+                    "total_access": 0,
+                    "admin_access": 0,
+                    "avg_risk": 0.0
+                }
+            
+            analytics["service_breakdown"][service_key]["total_access"] += 1
+            if resource.access_type == AccessType.ADMIN:
+                analytics["service_breakdown"][service_key]["admin_access"] += 1
+    
+    # Sort top risks by score
+    analytics["top_risks"].sort(key=lambda x: x["risk_score"], reverse=True)
+    analytics["top_risks"] = analytics["top_risks"][:20]  # Top 20
+    
+    return analytics
 
 # JSON Import Functions
 async def process_json_import(json_data: Dict[str, Any]) -> Dict[str, Any]:
