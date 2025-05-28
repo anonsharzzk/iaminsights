@@ -1920,11 +1920,24 @@ async def get_users_paginated(
             
             # Apply provider filter
             if provider:
-                user_providers = set(r.provider for r in user_access.resources)
-                if provider not in user_providers:
+                # Filter resources by provider first
+                provider_resources = [r for r in user_access.resources if r.provider.lower() == provider.lower()]
+                if not provider_resources:
                     continue
-                # Filter resources by provider
-                user_access.resources = [r for r in user_access.resources if r.provider == provider]
+                # Create a copy of user_access with only provider resources for analysis
+                user_access = UserAccess(
+                    user_email=user_access.user_email,
+                    user_name=user_access.user_name,
+                    department=user_access.department,
+                    job_title=user_access.job_title,
+                    is_service_account=user_access.is_service_account,
+                    last_updated=user_access.last_updated,
+                    resources=provider_resources,
+                    cross_provider_admin=False,
+                    privilege_escalation_paths=[],
+                    unused_privileges=[],
+                    overall_risk_score=0.0
+                )
             
             # Perform risk analysis
             analyzed_user = analyze_user_access(user_access)
