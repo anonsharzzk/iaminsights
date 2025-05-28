@@ -1889,8 +1889,217 @@ async def export_data(
         logging.error(f"Error exporting data: {str(e)}")
         raise HTTPException(status_code=500, detail="Error exporting data")
 
+# Enhanced API Endpoints
+
+@api_router.get("/users/paginated")
+async def get_users_paginated(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=500, description="Items per page"),
+    search: Optional[str] = Query(None, description="Search by email"),
+    provider: Optional[str] = Query(None, description="Filter by provider"),
+    risk_level: Optional[str] = Query(None, description="Filter by risk level"),
+    sort_by: str = Query("risk_score", description="Sort by field"),
+    sort_order: str = Query("desc", description="Sort order (asc/desc)"),
+    current_user: User = Depends(get_current_user)
+):
+    """Get paginated list of users with search and filtering"""
+    try:
+        # Calculate skip value
+        skip = (page - 1) * page_size
+        
+        # Get all users and apply filters in memory (for advanced filtering)
+        all_users = await db.user_access.find().to_list(10000)
+        filtered_users = []
+        
+        for user_doc in all_users:
+            user_access = UserAccess(**user_doc)
+            
+            # Apply search filter
+            if search and search.lower() not in user_access.user_email.lower():
+                continue
+            
+            # Apply provider filter
+            if provider:
+                user_providers = set(r.provider for r in user_access.resources)
+                if provider not in user_providers:
+                    continue
+                # Filter resources by provider
+                user_access.resources = [r for r in user_access.resources if r.provider == provider]
+            
+            # Perform risk analysis
+            analyzed_user = analyze_user_access(user_access)
+            risk_result = calculate_comprehensive_risk_score(analyzed_user)
+            
+            # Apply risk level filter
+            if risk_level and risk_result.risk_level != risk_level:
+                continue
+            
+            # Prepare user data for response
+            user_data = {
+                "user_email": user_access.user_email,
+                "user_name": user_access.user_name,
+                "department": user_access.department,
+                "job_title": user_access.job_title,
+                "is_service_account": user_access.is_service_account,
+                "risk_score": risk_result.overall_score,
+                "risk_level": risk_result.risk_level,
+                "confidence_score": risk_result.confidence_score,
+                "total_resources": len(user_access.resources),
+                "admin_access_count": sum(1 for r in user_access.resources if r.access_type == AccessType.ADMIN),
+                "providers": list(set(r.provider for r in user_access.resources)),
+                "services": list(set(f"{r.provider}-{r.service}" for r in user_access.resources)),
+                "cross_provider_admin": analyzed_user.cross_provider_admin,
+                "privilege_escalation_count": len(analyzed_user.privilege_escalation_paths),
+                "unused_privileges_count": len(analyzed_user.unused_privileges),
+                "top_risk_factors": [rf.factor_type for rf in risk_result.risk_factors[:3]],
+                "last_updated": user_access.last_updated
+            }
+            
+            filtered_users.append(user_data)
+        
+        # Sort users
+        reverse_sort = sort_order.lower() == "desc"
+        if sort_by == "risk_score":
+            filtered_users.sort(key=lambda x: x["risk_score"], reverse=reverse_sort)
+        elif sort_by == "user_email":
+            filtered_users.sort(key=lambda x: x["user_email"], reverse=reverse_sort)
+        elif sort_by == "last_updated":
+            filtered_users.sort(key=lambda x: x["last_updated"], reverse=reverse_sort)
+        elif sort_by == "total_resources":
+            filtered_users.sort(key=lambda x: x["total_resources"], reverse=reverse_sort)
+        
+        # Apply pagination
+        total_users = len(filtered_users)
+        paginated_users = filtered_users[skip:skip + page_size]
+        
+        return {
+            "users": paginated_users,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_users": total_users,
+                "total_pages": (total_users + page_size - 1) // page_size,
+                "has_next": skip + page_size < total_users,
+                "has_prev": page > 1
+            },
+            "filters": {
+                "search": search,
+                "provider": provider,
+                "risk_level": risk_level,
+                "sort_by": sort_by,
+                "sort_order": sort_order
+            }
+        }
+    
+    except Exception as e:
+        logging.error(f"Error getting paginated users: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving users")
+
+@api_router.get("/analytics/provider/{provider}")
+async def get_provider_analytics(
+    provider: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get analytics for a specific provider"""
+    try:
+        analytics = await get_provider_risk_analytics(provider)
+        return analytics
+    except Exception as e:
+        logging.error(f"Error getting provider analytics: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving provider analytics")
+
+@api_router.get("/analytics/dashboard/{provider}")
+async def get_provider_dashboard(
+    provider: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get dashboard data for a specific provider"""
+    try:
+        # Get provider-specific analytics
+        analytics = await get_provider_risk_analytics(provider)
+        
+        # Get top risky services for this provider
+        users = await db.user_access.find().to_list(1000)
+        service_risks = {}
+        
+        for user_doc in users:
+            user_access = UserAccess(**user_doc)
+            provider_resources = [r for r in user_access.resources if r.provider == provider]
+            
+            if not provider_resources:
+                continue
+                
+            user_access.resources = provider_resources
+            analyzed_user = analyze_user_access(user_access)
+            
+            for resource in provider_resources:
+                service_key = resource.service
+                if service_key not in service_risks:
+                    service_risks[service_key] = {
+                        "service": service_key,
+                        "total_users": 0,
+                        "admin_users": 0,
+                        "avg_risk": 0.0,
+                        "total_risk": 0.0,
+                        "high_risk_users": []
+                    }
+                
+                service_risks[service_key]["total_users"] += 1
+                service_risks[service_key]["total_risk"] += analyzed_user.overall_risk_score
+                
+                if resource.access_type == AccessType.ADMIN:
+                    service_risks[service_key]["admin_users"] += 1
+                
+                if analyzed_user.overall_risk_score > 60:
+                    service_risks[service_key]["high_risk_users"].append({
+                        "user_email": user_access.user_email,
+                        "risk_score": analyzed_user.overall_risk_score
+                    })
+        
+        # Calculate average risk per service
+        for service_data in service_risks.values():
+            if service_data["total_users"] > 0:
+                service_data["avg_risk"] = service_data["total_risk"] / service_data["total_users"]
+        
+        # Sort services by average risk
+        top_risky_services = sorted(
+            service_risks.values(),
+            key=lambda x: x["avg_risk"],
+            reverse=True
+        )[:10]
+        
+        return {
+            "provider": provider,
+            "summary": analytics,
+            "top_risky_services": top_risky_services,
+            "dashboard_widgets": [
+                {
+                    "type": "risk_distribution",
+                    "title": f"{provider.upper()} Risk Distribution",
+                    "data": analytics["risk_distribution"]
+                },
+                {
+                    "type": "top_risks",
+                    "title": f"Top {provider.upper()} Risks",
+                    "data": analytics["top_risks"][:5]
+                },
+                {
+                    "type": "service_breakdown",
+                    "title": f"{provider.upper()} Service Breakdown",
+                    "data": top_risky_services[:5]
+                }
+            ]
+        }
+    
+    except Exception as e:
+        logging.error(f"Error getting provider dashboard: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving dashboard data")
+
 @api_router.get("/risk-analysis/{user_email}")
-async def get_user_risk_analysis(user_email: str):
+async def get_user_risk_analysis(
+    user_email: str,
+    current_user: User = Depends(get_current_user)
+):
     """Get detailed risk analysis for a specific user"""
     try:
         user_doc = await db.user_access.find_one({"user_email": user_email})
@@ -1899,28 +2108,28 @@ async def get_user_risk_analysis(user_email: str):
         
         user_access = UserAccess(**user_doc)
         analyzed_user = analyze_user_access(user_access)
+        risk_result = calculate_comprehensive_risk_score(analyzed_user)
         
         return {
             "user_email": user_email,
-            "overall_risk_score": analyzed_user.overall_risk_score,
-            "risk_level": (
-                "critical" if analyzed_user.overall_risk_score >= 75 else
-                "high" if analyzed_user.overall_risk_score >= 50 else
-                "medium" if analyzed_user.overall_risk_score >= 25 else
-                "low"
-            ),
+            "user_name": user_access.user_name,
+            "department": user_access.department,
+            "job_title": user_access.job_title,
+            "is_service_account": user_access.is_service_account,
+            "overall_risk_score": risk_result.overall_score,
+            "risk_level": risk_result.risk_level,
+            "confidence_score": risk_result.confidence_score,
+            "risk_factors": [rf.dict() for rf in risk_result.risk_factors],
+            "recommendations": risk_result.recommendations,
             "cross_provider_admin": analyzed_user.cross_provider_admin,
-            "privilege_escalation_paths": analyzed_user.privilege_escalation_paths,
+            "privilege_escalation_paths": [path.dict() for path in analyzed_user.privilege_escalation_paths],
             "unused_privileges": analyzed_user.unused_privileges,
             "admin_access_count": sum(1 for r in user_access.resources if r.access_type == AccessType.ADMIN),
             "privileged_access_count": sum(1 for r in user_access.resources if r.is_privileged),
             "providers_with_access": list(set(r.provider for r in user_access.resources)),
-            "recommendations": [
-                "Enable MFA on all privileged accounts" if any(not r.mfa_required and r.is_privileged for r in user_access.resources) else None,
-                "Review unused privileges" if analyzed_user.unused_privileges else None,
-                "Audit cross-provider admin access" if analyzed_user.cross_provider_admin else None,
-                "Implement privilege escalation monitoring" if analyzed_user.privilege_escalation_paths else None
-            ]
+            "services_with_access": list(set(f"{r.provider}-{r.service}" for r in user_access.resources)),
+            "total_resources": len(user_access.resources),
+            "last_updated": user_access.last_updated
         }
     
     except HTTPException:
@@ -1928,6 +2137,97 @@ async def get_user_risk_analysis(user_email: str):
     except Exception as e:
         logging.error(f"Error getting risk analysis for user {user_email}: {str(e)}")
         raise HTTPException(status_code=500, detail="Error retrieving risk analysis")
+
+@api_router.delete("/users/access/{user_email}")
+async def delete_user_access(
+    user_email: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete user access data (requires admin or self)"""
+    try:
+        # Check if user can delete this access data
+        if current_user.role != UserRole.ADMIN and current_user.email != user_email:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not enough permissions to delete this user's access data"
+            )
+        
+        # Get user data before deletion for audit
+        user_doc = await db.user_access.find_one({"user_email": user_email})
+        if not user_doc:
+            raise HTTPException(status_code=404, detail="User access data not found")
+        
+        user_access = UserAccess(**user_doc)
+        risk_score_before = analyze_user_access(user_access).overall_risk_score
+        
+        # Delete user access data
+        result = await db.user_access.delete_one({"user_email": user_email})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="User access data not found")
+        
+        # Log audit event
+        await log_audit_event(
+            event_type="user_access_deletion",
+            user_email=current_user.email,
+            target_user=user_email,
+            action="delete_user_access",
+            details={
+                "deleted_user": user_email,
+                "resource_count": len(user_access.resources),
+                "providers": list(set(r.provider for r in user_access.resources))
+            },
+            risk_score_before=risk_score_before
+        )
+        
+        return {"message": f"User access data for {user_email} deleted successfully"}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error deleting user access for {user_email}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error deleting user access data")
+
+@api_router.get("/audit-logs")
+async def get_audit_logs(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    event_type: Optional[str] = Query(None),
+    current_admin: User = Depends(get_current_admin_user)
+):
+    """Get audit logs (Admin only)"""
+    try:
+        skip = (page - 1) * page_size
+        
+        # Build query filter
+        query_filter = {}
+        if event_type:
+            query_filter["event_type"] = event_type
+        
+        # Get total count
+        total_logs = await db.audit_logs.count_documents(query_filter)
+        
+        # Get paginated logs
+        logs = await db.audit_logs.find(query_filter)\
+            .sort("timestamp", -1)\
+            .skip(skip)\
+            .limit(page_size)\
+            .to_list(page_size)
+        
+        return {
+            "logs": [AuditEvent(**log).dict() for log in logs],
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total_logs": total_logs,
+                "total_pages": (total_logs + page_size - 1) // page_size,
+                "has_next": skip + page_size < total_logs,
+                "has_prev": page > 1
+            }
+        }
+    
+    except Exception as e:
+        logging.error(f"Error getting audit logs: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error retrieving audit logs")
 
 # Include the router in the main app
 app.include_router(api_router)
