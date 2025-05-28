@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Shield, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
-const LoginPage = ({ onBack }) => {
+const LoginPage = ({ onBack, onShowSignup }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
