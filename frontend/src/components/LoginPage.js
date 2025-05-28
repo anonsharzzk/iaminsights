@@ -112,6 +112,11 @@ const LoginPage = ({ onBack }) => {
             </button>
           </div>
         )}
+
+          {/* Footer */}
+          <div className="text-center mt-8 text-slate-400 text-sm">
+            <p>Don't have an account? <button onClick={onShowSignup} className="text-blue-400 hover:text-blue-300 transition-colors duration-200">Sign up here</button></p>
+          </div>
       </div>
     </div>
   );
