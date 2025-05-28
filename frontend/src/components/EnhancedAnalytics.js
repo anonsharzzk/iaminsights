@@ -801,12 +801,58 @@ const EnhancedAnalytics = () => {
                 <div className="bg-slate-700/30 rounded-lg p-4">
                   <h4 className="text-lg font-semibold text-white mb-4">User Permissions</h4>
                   <div className="space-y-3">
-                    {selectedUserRisk.services_with_access.map((service, index) => {
-                      // Find corresponding resources for this service
-                      const serviceResources = selectedUserRisk.providers_with_access.length > 0 ? 
-                        [{ name: service, access_type: "Read/Write/Admin" }] : [];
-                      
-                      return (
+                    {selectedUserRisk.resource_details ? (
+                      selectedUserRisk.resource_details.map((resource, index) => (
+                        <div key={index} className="bg-slate-800/50 rounded-lg p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <span className="text-xl">{getProviderIcon(resource.provider)}</span>
+                                <p className="text-white font-medium">{resource.provider.toUpperCase()} - {resource.service}</p>
+                              </div>
+                              <p className="text-slate-300 text-sm mb-2">{resource.resource_name}</p>
+                              <div className="flex items-center space-x-2 mb-2">
+                                <span className={`text-xs px-2 py-1 rounded border ${
+                                  resource.access_type === 'admin' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                  resource.access_type === 'write' ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' :
+                                  'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                }`}>
+                                  {resource.access_type.charAt(0).toUpperCase() + resource.access_type.slice(1)} Access
+                                </span>
+                                {resource.is_privileged && (
+                                  <span className="text-xs bg-orange-500/20 text-orange-400 px-2 py-1 rounded border border-orange-500/30">
+                                    Privileged
+                                  </span>
+                                )}
+                                {!resource.mfa_required && (
+                                  <span className="text-xs bg-red-500/20 text-red-400 px-2 py-1 rounded border border-red-500/30">
+                                    No MFA
+                                  </span>
+                                )}
+                              </div>
+                              {resource.account_id && (
+                                <p className="text-slate-400 text-xs">Account: {resource.account_id}</p>
+                              )}
+                              {resource.last_used && (
+                                <p className="text-slate-400 text-xs">Last used: {new Date(resource.last_used).toLocaleDateString()}</p>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                                resource.access_type === 'admin' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                resource.is_privileged ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
+                                'bg-green-500/20 text-green-400 border-green-500/30'
+                              }`}>
+                                {resource.access_type === 'admin' ? 'High Risk' : 
+                                 resource.is_privileged ? 'Medium Risk' : 'Low Risk'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // Fallback to services if resource_details not available
+                      selectedUserRisk.services_with_access.map((service, index) => (
                         <div key={index} className="bg-slate-800/50 rounded-lg p-4">
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
@@ -837,8 +883,8 @@ const EnhancedAnalytics = () => {
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                      ))
+                    )}
                   </div>
                 </div>
 
