@@ -254,6 +254,7 @@ current_focus:
   - "JWT Token & Session Testing"
   - "Signup API Testing"
   - "Authentication Flow Testing"
+  - "Session Persistence Testing"
 
 stuck_tasks: []
 
