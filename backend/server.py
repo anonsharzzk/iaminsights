@@ -930,6 +930,10 @@ def analyze_user_access(user_access: UserAccess) -> UserAccess:
     # Update user access with results
     user_access.overall_risk_score = risk_result.overall_score
     
+    # Calculate privilege escalation paths separately to ensure they're set
+    _, _, escalation_paths = calculate_privilege_escalation_risk(user_access)
+    user_access.privilege_escalation_paths = escalation_paths
+    
     # Detect unused privileges with 90-day threshold
     user_access.unused_privileges = [
         f"{resource.provider}-{resource.service}"
