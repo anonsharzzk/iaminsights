@@ -157,6 +157,10 @@ current_focus:
   - "Provider-Specific Analytics"
   - "User Management & Audit"
   - "Data Import & Risk Analysis"
+  - "Admin User Creation Verification"
+  - "JWT Token & Session Testing"
+  - "Signup API Testing"
+  - "Authentication Flow Testing"
 
 stuck_tasks: []
 
@@ -169,3 +173,5 @@ test_priority: "high_first"
   message: "Starting backend API testing for Cloud Access Visualizer"
 - agent: "testing"
   message: "Completed testing of provider filtering and privilege escalation detection. Provider filtering is working correctly for AWS, GCP, and Okta. Privilege escalation detection is properly implemented with the correct data structure, though no actual escalation paths were found in the test data."
+- agent: "testing"
+  message: "Completed comprehensive authentication testing. Both admin accounts exist and work correctly. JWT tokens have 24-hour expiration as required. Signup API creates users with correct 'user' role. Authentication flow works properly. Minor issues: Invalid token and invalid email format handling return 500 errors instead of appropriate 4xx status codes."
