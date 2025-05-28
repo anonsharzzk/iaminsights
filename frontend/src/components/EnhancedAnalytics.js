@@ -291,22 +291,22 @@ const EnhancedAnalytics = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-slate-700/30 rounded-lg p-4 text-center">
                 <Users className="w-8 h-8 text-blue-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{pagination.total_users || "0"}</p>
+                <p className="text-2xl font-bold text-white">{overviewStats.total_users}</p>
                 <p className="text-slate-300 text-sm">Total Users</p>
               </div>
               <div className="bg-slate-700/30 rounded-lg p-4 text-center">
                 <Shield className="w-8 h-8 text-orange-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{users.filter(u => u.cross_provider_admin).length}</p>
+                <p className="text-2xl font-bold text-white">{overviewStats.cross_provider_admins}</p>
                 <p className="text-slate-300 text-sm">Cross-Provider Admins</p>
               </div>
               <div className="bg-slate-700/30 rounded-lg p-4 text-center">
                 <AlertTriangle className="w-8 h-8 text-red-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{users.filter(u => u.privilege_escalation_count > 0).length}</p>
+                <p className="text-2xl font-bold text-white">{overviewStats.escalation_risks}</p>
                 <p className="text-slate-300 text-sm">Escalation Risks</p>
               </div>
               <div className="bg-slate-700/30 rounded-lg p-4 text-center">
                 <Activity className="w-8 h-8 text-green-400 mx-auto mb-2" />
-                <p className="text-2xl font-bold text-white">{users.filter(u => u.risk_level === 'high' || u.risk_level === 'critical').length}</p>
+                <p className="text-2xl font-bold text-white">{overviewStats.high_risk_users}</p>
                 <p className="text-slate-300 text-sm">High Risk Users</p>
               </div>
             </div>
@@ -317,7 +317,7 @@ const EnhancedAnalytics = () => {
                 <h4 className="text-lg font-semibold text-white mb-4">Risk Distribution</h4>
                 <div className="space-y-3">
                   {['critical', 'high', 'medium', 'low'].map(level => {
-                    const count = users.filter(u => u.risk_level === level).length;
+                    const count = overviewStats.risk_distribution[level];
                     return (
                       <div key={level} className="flex items-center justify-between">
                         <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getRiskBadgeColor(level)}`}>
@@ -335,7 +335,7 @@ const EnhancedAnalytics = () => {
                 <h4 className="text-lg font-semibold text-white mb-4">Provider Access</h4>
                 <div className="space-y-3">
                   {['aws', 'gcp', 'azure', 'okta'].map(provider => {
-                    const count = users.filter(u => u.providers.includes(provider)).length;
+                    const count = overviewStats.provider_distribution[provider];
                     return (
                       <div key={provider} className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
