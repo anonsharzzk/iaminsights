@@ -30,7 +30,7 @@ class UserRole(str, Enum):
 class User(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     email: EmailStr
-    full_name: str
+    full_name: Optional[str] = None
     hashed_password: str
     role: UserRole = UserRole.USER
     is_active: bool = True
