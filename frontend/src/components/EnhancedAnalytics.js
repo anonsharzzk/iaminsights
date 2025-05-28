@@ -165,6 +165,17 @@ const EnhancedAnalytics = () => {
     setSortOrder("desc");
   };
 
+  // Don't render if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="text-center py-12">
+        <Shield className="w-16 h-16 mx-auto text-slate-400 mb-4" />
+        <h3 className="text-xl font-semibold text-white mb-2">Authentication Required</h3>
+        <p className="text-slate-400">Please log in to access enhanced analytics.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header with Navigation */}
