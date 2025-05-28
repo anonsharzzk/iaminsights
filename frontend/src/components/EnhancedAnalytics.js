@@ -51,7 +51,7 @@ const EnhancedAnalytics = () => {
     
     try {
       // Fetch users to calculate overview stats
-      const response = await axios.get(`${API}/users/paginated?page=1&page_size=1000`);
+      const response = await axios.get(`${API}/users/paginated?page=1&page_size=500`);
       const allUsers = response.data.users;
       
       const stats = {
