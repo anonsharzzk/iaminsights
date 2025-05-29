@@ -1,0 +1,94 @@
+{
+  "metadata": {
+    "import_date": "2024-03-19T10:30:00Z",
+    "version": "2.0",
+    "description": "Unified multi-provider access data sample"
+  },
+  "users": [
+    {
+      "email": "sarah.wilson@company.com",
+      "full_name": "Sarah Wilson",
+      "department": "Engineering",
+      "job_title": "Senior DevOps Engineer",
+      "manager": "engineering-director@company.com",
+      "is_service_account": false,
+      "providers": {
+        "aws": {
+          "user_id": "AIDACKCEVSQ6C2EXAMPLE",
+          "groups": ["developers", "aws-admins"],
+          "resources": [
+            {
+              "service": "S3",
+              "resource_type": "bucket",
+              "resource_name": "production-data",
+              "access_type": "admin",
+              "permission_details": {
+                "actions": ["s3:*"],
+                "effect": "Allow",
+                "resource": "arn:aws:s3:::production-data/*"
+              },
+              "account_id": "123456789012",
+              "region": "us-east-1",
+              "risk_level": "high",
+              "is_privileged": true,
+              "last_used": "2024-03-19T09:15:00Z",
+              "mfa_required": true
+            }
+          ]
+        },
+        "github": {
+          "user_id": "sarahw",
+          "teams": [
+            {
+              "name": "DevOps",
+              "role": "maintainer",
+              "repositories": [
+                {
+                  "name": "infrastructure-as-code",
+                  "permissions": ["admin"],
+                  "risk_level": "high",
+                  "is_private": true,
+                  "last_accessed": "2024-03-19T08:30:00Z"
+                }
+              ]
+            }
+          ]
+        },
+        "okta": {
+          "user_id": "00u1a2b3c4d5e6f7g",
+          "groups": ["okta-admins", "sso-users"],
+          "applications": [
+            {
+              "name": "AWS Single Sign-On",
+              "access_type": "admin",
+              "risk_level": "critical",
+              "last_accessed": "2024-03-19T10:00:00Z",
+              "mfa_required": true
+            }
+          ]
+        }
+      },
+      "organization": {
+        "id": "org_123",
+        "name": "Engineering",
+        "role": "admin"
+      }
+    }
+  ],
+  "organizations": [
+    {
+      "id": "org_123",
+      "name": "Engineering",
+      "description": "Engineering and DevOps teams",
+      "teams": [
+        {
+          "id": "team_456",
+          "name": "DevOps",
+          "description": "Infrastructure and automation team",
+          "role": "admin",
+          "members": ["sarah.wilson@company.com"]
+        }
+      ]
+    }
+  ]
+}
